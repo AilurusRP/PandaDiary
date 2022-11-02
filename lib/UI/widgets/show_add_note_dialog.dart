@@ -8,7 +8,7 @@ Future<void> showAddNoteDialog(context,
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text("add note"),
+          title: const Text("Add Note"),
           content: SingleChildScrollView(
             child: ListBody(
               children: [

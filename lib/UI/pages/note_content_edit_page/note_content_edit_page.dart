@@ -3,14 +3,25 @@ import 'package:flutter/services.dart';
 import 'package:panda_diary/UI/pages/data_binders/note_content_text.dart';
 
 class NoteContentEditPage extends StatefulWidget {
-  const NoteContentEditPage({Key? key, required this.id}) : super(key: key);
+  const NoteContentEditPage(
+      {Key? key,
+      required this.id,
+      required this.title,
+      required this.onContentChange})
+      : super(key: key);
 
   final String id;
+  final String title;
+  final void Function(String) onContentChange;
 
-  static navigatorPush(context, {required String id}) {
+  static navigatorPush(context,
+      {required String id,
+      required String title,
+      required void Function(String) onContentChange}) {
     SystemChannels.textInput.invokeMethod('TextInput.hide');
-    Navigator.of(context).push(
-        MaterialPageRoute(builder: (context) => NoteContentEditPage(id: id)));
+    Navigator.of(context).push(MaterialPageRoute(
+        builder: (context) => NoteContentEditPage(
+            id: id, title: title, onContentChange: onContentChange)));
   }
 
   @override
@@ -37,7 +48,9 @@ class _NoteContentEditPageState extends State<NoteContentEditPage> {
     _afterBuild();
 
     return Scaffold(
-        appBar: AppBar(),
+        appBar: AppBar(
+          title: Text(widget.title),
+        ),
         body: Container(
             padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 10),
             child: TextField(
@@ -52,7 +65,9 @@ class _NoteContentEditPageState extends State<NoteContentEditPage> {
                   _keyboardShow ? TextInputType.multiline : TextInputType.none,
               onTap: _keyboardShow ? () {} : _showKeyboard,
               decoration: const InputDecoration(border: InputBorder.none),
-              onChanged: _noteContentText.save,
+              onChanged: (text) {
+                 _noteContentText.save(text, widget.onContentChange);
+              },
             )));
   }
 

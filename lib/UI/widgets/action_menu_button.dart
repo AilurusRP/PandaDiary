@@ -20,7 +20,7 @@ class _ActionMenuButtonState extends State<ActionMenuButton> {
               PopupMenuItem(
                   padding: const EdgeInsets.all(0),
                   child: ActionMenuItem(
-                    text: "new note",
+                    text: "New Note",
                     onPressed: () {
                       Navigator.pop(context);
                       showAddNoteDialog(context, onOk: widget.onAddNoteOk);
@@ -29,7 +29,7 @@ class _ActionMenuButtonState extends State<ActionMenuButton> {
               PopupMenuItem(
                   padding: const EdgeInsets.all(0),
                   child: ActionMenuItem(
-                    text: "new folder",
+                    text: "New Folder",
                     onPressed: () {},
                   )),
             ]);

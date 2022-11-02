@@ -33,9 +33,10 @@ class NoteContentText {
     _setInit();
   }
 
-  void save(String newContent) {
+  Future<void> save(String newContent, void Function(String) onContentChange) async {
     _noteData.setContent(newContent);
-    _dbManager.update(_noteData);
+    onContentChange(newContent);
+    await _dbManager.update(_noteData);
   }
 
   _setInit() {

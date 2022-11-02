@@ -6,7 +6,7 @@ Future<void> showDeleteNoteDialog(context,
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text("add note"),
+          title: const Text("Delete Note"),
           content: const Text("Are you sure to delete this note?"),
           actions: [
             TextButton(

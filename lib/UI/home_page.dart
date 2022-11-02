@@ -15,11 +15,11 @@ class DiaryHomePage extends StatefulWidget {
 }
 
 class _DiaryHomePageState extends State<DiaryHomePage> {
-  late final ReactiveNoteList _noteListText;
+  late final ReactiveNoteList _noteList;
 
   @override
   void initState() {
-    _noteListText = ReactiveNoteList(setState);
+    _noteList = ReactiveNoteList(setState);
     super.initState();
   }
 
@@ -31,10 +31,9 @@ class _DiaryHomePageState extends State<DiaryHomePage> {
         actions: [
           ActionMenuButton(onAddNoteOk: (String noteName) {
             if (noteName != "") {
-              _noteListText.add(noteName);
+              _noteList.add(noteName);
             } else {
-              _noteListText
-                  .add("Untitled-${_noteListText.lastUntitledIndex + 1}");
+              _noteList.add("Untitled-${_noteList.lastUntitledIndex + 1}");
             }
           })
         ],
@@ -42,10 +41,17 @@ class _DiaryHomePageState extends State<DiaryHomePage> {
       drawer: const SideDrawer(),
       body: Center(
           child: NoteList(
-        noteList: _noteListText.toList(),
+        noteList: _noteList,
         onPress: (index) => NoteContentEditPage.navigatorPush(context,
-            id: _noteListText.getId(index)),
-        onDelete: _noteListText.removeAt,
+            id: _noteList.getId(index), title: _noteList.getTitle(index),
+            onContentChange: (String newContent) {
+          _noteList.changeElemContent(index, newContent);
+        }),
+        onDelete: _noteList.removeAt,
+        onReorder: (int oldIndex, int newIndex) async {
+          await _noteList.reorder(oldIndex, newIndex);
+          setState(() {});
+        },
       )),
     );
   }

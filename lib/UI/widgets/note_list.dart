@@ -1,17 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:panda_diary/UI/widgets/show_delete_note_dialog.dart';
 
+import '../data_binders/reactive_note_list.dart';
+
 class NoteList extends StatefulWidget {
   const NoteList(
       {Key? key,
       required this.noteList,
       required this.onPress,
-      required this.onDelete})
+      required this.onDelete,
+      required this.onReorder})
       : super(key: key);
 
-  final List noteList;
+  final ReactiveNoteList noteList;
   final Function onPress;
   final void Function(int) onDelete;
+  final Function onReorder;
 
   @override
   State<NoteList> createState() => _NoteListState();
@@ -20,16 +24,28 @@ class NoteList extends StatefulWidget {
 class _NoteListState extends State<NoteList> {
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      children: widget.noteList
+    return ReorderableListView(
+      children: widget.noteList.toList()
           .asMap()
           .entries
-          .map<Widget>((entry) => NoteListItem(
-              text: entry.value,
+          .map<Widget>((entry) {
+            return NoteListItem(
+              key: Key(entry.value.id),
+              text: entry.value.title,
               index: entry.key,
               onPress: widget.onPress,
-              onDelete: widget.onDelete))
+              onDelete: widget.onDelete);})
           .toList(),
+      onReorder: (int oldIndex, int newIndex) {
+        if (oldIndex < newIndex) {
+          newIndex -= 1;
+        }
+
+        setState(() {
+          widget.onReorder(oldIndex, newIndex);
+        });
+
+      },
     );
   }
 }
@@ -57,7 +73,7 @@ class _NoteListItemState extends State<NoteListItem> {
   Widget build(BuildContext context) {
     return GestureDetector(
         onTap: () => widget.onPress(widget.index),
-        onLongPress: () {
+        onHorizontalDragEnd: (DragEndDetails details) {
           showDeleteNoteDialog(context,
               onOk: () => widget.onDelete(widget.index));
         },

@@ -4,9 +4,9 @@ import 'package:panda_diary/db/data_models/note_data.dart';
 import 'package:panda_diary/db/db_manager.dart';
 
 class ReactiveNoteList {
-  List _value = [];
-  final _dbManager =
-      DBManager(tableName: NoteData.tableName, fields: NoteData.fields);
+  List<NoteData> _value = [];
+  final _dbManager = DBManager<NoteData>(
+      tableName: NoteData.tableName, fields: NoteData.fields);
   late final Function setState;
 
   ReactiveNoteList(this.setState) {
@@ -33,20 +33,73 @@ class ReactiveNoteList {
 
   add(title) {
     setState(() {
-      final noteData = NoteData(title: title, content: "");
+      final noteData = NoteData(ord: _value.length, title: title, content: "");
       _value.add(noteData);
       _dbManager.insert(noteData);
     });
   }
 
-  removeAt(index) {
+  NoteData removeAt(index) {
+    late NoteData value;
     setState(() {
       _dbManager.delete(_value[index].id);
-      _value.removeAt(index);
+      value = _value.removeAt(index);
+    });
+    return value;
+  }
+
+  void changeElemContent(int index, String newContent) {
+    setState(() {
+      _value[index].content = newContent;
     });
   }
 
-  List<String> toList() => _value.map<String>((item) => item.title).toList();
+  Future<void> reorder(int oldIndex, int newIndex) async {
+    var oldValue = List.from(_value);
 
-  String getId(int index) => _value[index].id;
+    NoteData temp = _value.removeAt(oldIndex);
+    _value.insert(newIndex, temp);
+
+    var oldNote = oldValue[oldIndex];
+    await _dbManager.update(NoteData.fromMap({
+      "id": oldNote.id,
+      "title": oldNote.title,
+      "content": oldNote.content,
+      "ord": newIndex
+    }));
+
+    if (newIndex > oldIndex) {
+      for (int i = oldIndex; i < newIndex; i++) {
+        var oldNote = oldValue[i];
+        await _dbManager.update(NoteData.fromMap({
+          "id": oldNote.id,
+          "title": oldNote.title,
+          "content": oldNote.content,
+          "ord": i - 1
+        }));
+      }
+    }
+
+    if (newIndex < oldIndex) {
+      for (int i = newIndex; i < oldIndex; i++) {
+        var oldNote = oldValue[i];
+        await _dbManager.update(NoteData.fromMap({
+          "id": oldNote.id,
+          "title": oldNote.title,
+          "content": oldNote.content,
+          "ord": i + 1
+        }));
+      }
+    }
+  }
+
+  List<NoteData> toList() {
+    return _value;
+  }
+
+  String getId(int index) {
+    return _value[index].id;
+  }
+
+  String getTitle(int index) => _value[index].title;
 }

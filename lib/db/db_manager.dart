@@ -32,9 +32,10 @@ class DBManager<T extends CommonDataModel> {
         conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
-  Future<List<T>> query(T Function(Map<String, Object?>) fromMap) async {
+  Future<List<T>> query(Function(Map<String, Object?>) fromMap) async {
     final db = await dataBase;
-    final List<Map<String, Object?>> maps = await db.query(tableName);
+    final List<Map<String, Object?>> maps =
+        await db.query(tableName, orderBy: "ord");
     return List.generate(maps.length, (index) => fromMap(maps[index]));
   }
 
