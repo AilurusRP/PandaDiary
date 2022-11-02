@@ -69,7 +69,7 @@ class ReactiveNoteList {
     }));
 
     if (newIndex > oldIndex) {
-      for (int i = oldIndex; i < newIndex; i++) {
+      for (int i = oldIndex + 1; i <= newIndex; i++) {
         var oldNote = oldValue[i];
         await _dbManager.update(NoteData.fromMap({
           "id": oldNote.id,
@@ -77,6 +77,7 @@ class ReactiveNoteList {
           "content": oldNote.content,
           "ord": i - 1
         }));
+        print(i);
       }
     }
 
@@ -89,6 +90,7 @@ class ReactiveNoteList {
           "content": oldNote.content,
           "ord": i + 1
         }));
+        print(i);
       }
     }
   }
