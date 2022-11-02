@@ -77,7 +77,6 @@ class ReactiveNoteList {
           "content": oldNote.content,
           "ord": i - 1
         }));
-        print(i);
       }
     }
 
@@ -90,7 +89,6 @@ class ReactiveNoteList {
           "content": oldNote.content,
           "ord": i + 1
         }));
-        print(i);
       }
     }
   }
