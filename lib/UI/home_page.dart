@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:panda_diary/UI/data_binders/reactive_note_list.dart';
 import 'package:panda_diary/UI/pages/note_content_edit_page/note_content_edit_page.dart';
-import 'package:panda_diary/UI/widgets/action_menu_button.dart';
+import 'package:panda_diary/UI/widgets/top_bar_action_menu_button.dart';
 import 'package:panda_diary/UI/widgets/note_list.dart';
 import 'package:panda_diary/UI/widgets/side_drawer.dart';
 
@@ -29,7 +29,7 @@ class _DiaryHomePageState extends State<DiaryHomePage> {
       appBar: AppBar(
         title: Text(widget.title),
         actions: [
-          ActionMenuButton(onAddNoteOk: (String noteName) {
+          TopBarActionMenuButton(onAddNoteOk: (String noteName) {
             if (noteName != "") {
               _noteList.add(noteName);
             } else {

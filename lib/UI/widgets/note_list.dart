@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:panda_diary/UI/widgets/show_delete_note_dialog.dart';
 
 import '../data_binders/reactive_note_list.dart';
+import 'action_menu_item.dart';
 
 class NoteList extends StatefulWidget {
   const NoteList(
@@ -25,17 +26,14 @@ class _NoteListState extends State<NoteList> {
   @override
   Widget build(BuildContext context) {
     return ReorderableListView(
-      children: widget.noteList.toList()
-          .asMap()
-          .entries
-          .map<Widget>((entry) {
-            return NoteListItem(
-              key: Key(entry.value.id),
-              text: entry.value.title,
-              index: entry.key,
-              onPress: widget.onPress,
-              onDelete: widget.onDelete);})
-          .toList(),
+      children: widget.noteList.toList().asMap().entries.map<Widget>((entry) {
+        return NoteListItem(
+            key: Key(entry.value.id),
+            text: entry.value.title,
+            index: entry.key,
+            onPress: widget.onPress,
+            onDelete: widget.onDelete);
+      }).toList(),
       onReorder: (int oldIndex, int newIndex) {
         if (oldIndex < newIndex) {
           newIndex -= 1;
@@ -44,7 +42,6 @@ class _NoteListState extends State<NoteList> {
         setState(() {
           widget.onReorder(oldIndex, newIndex);
         });
-
       },
     );
   }
@@ -73,22 +70,41 @@ class _NoteListItemState extends State<NoteListItem> {
   Widget build(BuildContext context) {
     return GestureDetector(
         onTap: () => widget.onPress(widget.index),
-        onHorizontalDragEnd: (DragEndDetails details) {
-          showDeleteNoteDialog(context,
-              onOk: () => widget.onDelete(widget.index));
-        },
+        // onHorizontalDragEnd: (DragEndDetails details) {
+        //   showDeleteNoteDialog(context,
+        //       onOk: () => widget.onDelete(widget.index));
+        // },
         child: Container(
           height: 50,
           padding: const EdgeInsets.fromLTRB(20, 0, 0, 0),
           decoration: const BoxDecoration(
             border: Border(bottom: BorderSide(width: 0.2, color: Colors.grey)),
           ),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              widget.text,
-              style: const TextStyle(fontSize: 18),
-            ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    widget.text,
+                    style: const TextStyle(fontSize: 18),
+                  ),
+                ),
+              ),
+              PopupMenuButton(
+                  icon: const Icon(Icons.more_horiz, color: Colors.black38),
+                  itemBuilder: (context) => [
+                        PopupMenuItem(
+                            child: ActionMenuItem(
+                          text: 'Delete Note',
+                          onPressed: () {
+                            Navigator.pop(context);
+                            showDeleteNoteDialog(context,
+                                onOk: () => widget.onDelete(widget.index));
+                          },
+                        ))
+                      ])
+            ],
           ),
         ));
   }
