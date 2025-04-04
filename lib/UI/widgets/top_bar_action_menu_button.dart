@@ -1,5 +1,6 @@
 import "package:flutter/material.dart";
 import 'package:panda_diary/UI/widgets/show_add_note_dialog.dart';
+import 'package:panda_diary/utils/file_utils.dart';
 
 import 'action_menu_item.dart';
 
@@ -33,6 +34,14 @@ class _TopBarActionMenuButtonState extends State<TopBarActionMenuButton> {
                   child: ActionMenuItem(
                     text: "New Folder",
                     onPressed: () {},
+                  )),
+              PopupMenuItem(
+                  padding: const EdgeInsets.all(0),
+                  child: ActionMenuItem(
+                    text: "Export Notes",
+                    onPressed: (){
+                      exportNotes();
+                    },
                   )),
             ]);
   }
