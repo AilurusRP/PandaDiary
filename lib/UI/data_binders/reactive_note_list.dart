@@ -14,16 +14,23 @@ class ReactiveNoteList {
   }
 
   int get lastUntitledIndex {
-    if (_value.isEmpty) return 0;
-    return _value
-        .where((elem) => elem.title.startsWith("Untitled-"))
-        .map<int>((elem) {
-      try {
-        return int.parse(elem.title.substring(9));
-      } on FormatException {
+    if (_value.isEmpty) {
+      return 0;
+    } else {
+      var untitledNotes =
+          _value.where((elem) => elem.title.startsWith("Untitled-"));
+      if (untitledNotes.isEmpty) {
         return 0;
+      } else {
+        return untitledNotes.map<int>((elem) {
+          try {
+            return int.parse(elem.title.substring(9));
+          } on FormatException {
+            return 0;
+          }
+        }).reduce(max);
       }
-    }).reduce(max);
+    }
   }
 
   void _init() async {
