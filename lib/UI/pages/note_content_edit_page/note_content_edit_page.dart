@@ -49,6 +49,8 @@ class _NoteContentEditPageState extends State<NoteContentEditPage> {
 
     return Scaffold(
         appBar: AppBar(
+          backgroundColor: Colors.black,
+          foregroundColor: Colors.white,
           title: Text(widget.title),
         ),
         body: Container(

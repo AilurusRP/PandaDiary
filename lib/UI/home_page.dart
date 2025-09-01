@@ -27,6 +27,8 @@ class _DiaryHomePageState extends State<DiaryHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
         title: Text(widget.title),
         actions: [
           TopBarActionMenuButton(onAddNoteOk: (String noteName) {

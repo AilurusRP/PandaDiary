@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:panda_diary/UI/home_page.dart';
 
-import 'constants/theme_color.dart';
-
 void main() {
   runApp(const MyApp());
 }
@@ -12,11 +10,9 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return const MaterialApp(
       title: 'Panda Diary',
-      theme: ThemeData(
-          primarySwatch: primaryBlack),
-      home: const DiaryHomePage(title: 'Panda Diary'),
+      home: DiaryHomePage(title: 'Panda Diary'),
     );
   }
 }
