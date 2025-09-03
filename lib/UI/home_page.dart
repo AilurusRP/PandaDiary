@@ -4,6 +4,7 @@ import 'package:panda_diary/UI/widgets/top_bar_action_menu_button.dart';
 import 'package:panda_diary/UI/widgets/note_list.dart';
 import 'package:panda_diary/UI/widgets/side_drawer.dart';
 import 'package:panda_diary/db/data_binders/reactive_note_list.dart';
+import 'package:panda_diary/utils/file_utils.dart';
 
 class DiaryHomePage extends StatefulWidget {
   const DiaryHomePage({Key? key, required this.title}) : super(key: key);
@@ -21,6 +22,7 @@ class _DiaryHomePageState extends State<DiaryHomePage> {
   void initState() {
     _noteList = ReactiveNoteList(setState);
     super.initState();
+    createExportDirAndImportDir();
   }
 
   @override
