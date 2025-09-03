@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:panda_diary/UI/pages/data_binders/note_content_text.dart';
+import 'package:panda_diary/db/data_binders/note_content_text.dart';
 
 class NoteContentEditPage extends StatefulWidget {
   const NoteContentEditPage(

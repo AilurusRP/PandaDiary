@@ -39,8 +39,15 @@ class _TopBarActionMenuButtonState extends State<TopBarActionMenuButton> {
                   padding: const EdgeInsets.all(0),
                   child: ActionMenuItem(
                     text: "Export Notes",
-                    onPressed: (){
-                      exportNotes();
+                    onPressed: () {
+                      exportNotes(onFall: (Object? err) {
+                        showDialog(
+                            context: context,
+                            builder: (context) {
+                              return AlertDialog(
+                                  content: Text(err.toString()));
+                            });
+                      });
                     },
                   )),
             ]);

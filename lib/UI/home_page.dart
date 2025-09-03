@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:panda_diary/UI/data_binders/reactive_note_list.dart';
 import 'package:panda_diary/UI/pages/note_content_edit_page/note_content_edit_page.dart';
 import 'package:panda_diary/UI/widgets/top_bar_action_menu_button.dart';
 import 'package:panda_diary/UI/widgets/note_list.dart';
 import 'package:panda_diary/UI/widgets/side_drawer.dart';
+import 'package:panda_diary/db/data_binders/reactive_note_list.dart';
 
 class DiaryHomePage extends StatefulWidget {
   const DiaryHomePage({Key? key, required this.title}) : super(key: key);
