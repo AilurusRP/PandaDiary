@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 import 'package:path/path.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:uuid/uuid.dart';
@@ -37,8 +38,11 @@ Future<void> importNotes({required Function(Object?) onFall}) async {
   List<NoteData> notesInDatabase = await dbManager.query(NoteData.fromMap);
 
   for (int i = 0; i < noteFiles.length; i++) {
-    await _importNote(noteFiles.toList()[i] as File, i + notesInDatabase.length,
-            dbManager, notesInDatabase)
+    await _importNote(
+            noteFiles.toList()[i] as File,
+            i + notesInDatabase.map((noteData) => noteData.ord).reduce(max),
+            dbManager,
+            notesInDatabase)
         .onError((err, stackTrace) {
       onFall(err);
     });
