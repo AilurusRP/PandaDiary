@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:math';
+import 'package:panda_diary/constants/package_name.dart';
 import 'package:path/path.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:uuid/uuid.dart';
@@ -11,8 +12,12 @@ void exportNotes({required Function(Object?) onFall}) async {
   Permission.manageExternalStorage.request();
   List<NoteData> data = await _getAllNotesData();
   data.forEach((noteData) {
+    String escapedTitle = noteData.title
+        .split("")
+        .map((char) => ("|\\?*<\":>+[]/'".contains(char)) ? "_" : char)
+        .join("");
     _writeTextToPublicDocument(
-      fileName: 'panda_diary.${noteData.title}.${noteData.id}.backup',
+      fileName: '$packageName.$escapedTitle.${noteData.id}.backup',
       content:
           "id:${noteData.id}\ntitle:${noteData.title}\ncontent:\n${noteData.content}",
     ).onError((err, stackTrace) {
@@ -23,7 +28,7 @@ void exportNotes({required Function(Object?) onFall}) async {
 
 Future<void> importNotes({required Function(Object?) onFall}) async {
   Permission.manageExternalStorage.request();
-  final Directory dir = Directory("/storage/emulated/0/panda_diary");
+  final Directory dir = Directory("/storage/emulated/0/$packageName");
   if (!await dir.exists()) {
     await dir.create(recursive: true);
   }
@@ -83,7 +88,7 @@ Future<void> _importNote(File file, int ord, DBManager<NoteData> dbManager,
 bool _isValidNoteBackupFileName(String fileName) {
   var splitFileName = fileName.split(".");
   if (splitFileName.length < 4) return false;
-  if (splitFileName[0] != "panda_diary") return false;
+  if (splitFileName[0] != packageName) return false;
   if (splitFileName[splitFileName.length - 1] != "backup") return false;
 
   var uuidPattern = RegExp(
@@ -110,6 +115,7 @@ bool _isValidNoteDataBackup(String fileName, String content) {
     return false;
   }
   if (contentList[1].split(":")[0] != "title") return false;
+
   if (contentList[2] != "content:") return false;
 
   return true;
@@ -117,7 +123,7 @@ bool _isValidNoteDataBackup(String fileName, String content) {
 
 void createExportDirAndImportDir() async {
   Permission.manageExternalStorage.request();
-  final Directory dir = Directory("/storage/emulated/0/panda_diary");
+  final Directory dir = Directory("/storage/emulated/0/$packageName");
   if (!await dir.exists()) {
     await dir.create(recursive: true);
   }
@@ -140,7 +146,7 @@ Future<void> _writeTextToPublicDocument({
   required String fileName,
   required String content,
 }) async {
-  final Directory dir = Directory("/storage/emulated/0/panda_diary");
+  final Directory dir = Directory("/storage/emulated/0/$packageName");
 
   if (!await dir.exists()) {
     await dir.create(recursive: true);
