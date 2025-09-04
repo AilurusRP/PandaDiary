@@ -27,6 +27,8 @@ class _DiaryHomePageState extends State<DiaryHomePage> {
 
   void _updateNoteList() {
     _noteList.update();
+    print("pppppppppppppppppppppppppppp");
+    print(_noteList.toList());
     setState(() {});
   }
 

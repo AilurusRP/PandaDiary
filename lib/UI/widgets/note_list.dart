@@ -26,6 +26,7 @@ class _NoteListState extends State<NoteList> {
   Widget build(BuildContext context) {
     return ReorderableListView(
       children: widget.noteList.toList().asMap().entries.map<Widget>((entry) {
+        print(entry.value.id);
         return NoteListItem(
             key: Key(entry.value.id),
             text: entry.value.title,

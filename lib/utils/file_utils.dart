@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:path/path.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:uuid/uuid.dart';
 
 import '../db/data_models/note_data.dart';
 import '../db/db_manager.dart';
@@ -33,29 +34,42 @@ Future<void> importNotes({required Function(Object?) onFall}) async {
   final dbManager = await (DBManager<NoteData>(
           tableName: NoteData.tableName, fields: NoteData.fields))
       .open();
-  int countOfNotesInDatabase = (await dbManager.query(NoteData.fromMap)).length;
+  List<NoteData> notesInDatabase = await dbManager.query(NoteData.fromMap);
 
   for (int i = 0; i < noteFiles.length; i++) {
-    await _importNote(noteFiles.toList()[i] as File, i + countOfNotesInDatabase,
-            dbManager)
+    await _importNote(noteFiles.toList()[i] as File, i + notesInDatabase.length,
+            dbManager, notesInDatabase)
         .onError((err, stackTrace) {
       onFall(err);
     });
   }
 }
 
-Future<void> _importNote(
-    File file, int ord, DBManager<NoteData> dbManager) async {
+Future<void> _importNote(File file, int ord, DBManager<NoteData> dbManager,
+    List<NoteData> notesInDatabase) async {
   String backupText = await file.readAsString();
   if (!_isValidNoteDataBackup(basename(file.path), backupText)) {
     throw Exception("The note backup is not valid.");
   }
 
   var backupTextLines = backupText.split("\n");
+  String id = backupTextLines[0].split(":")[1];
+  String title = backupTextLines[1].split(":").sublist(1).join(":");
+  String content = backupTextLines.sublist(3).join("\n");
+
+  List<NoteData> duplicatedNotes =
+      notesInDatabase.where((noteData) => noteData.id == id).toList();
+  assert(duplicatedNotes.length <= 1);
+
+  if (duplicatedNotes.isNotEmpty) {
+    if (duplicatedNotes[0].content == content) return;
+    id = const Uuid().v4();
+    if (duplicatedNotes[0].title == title) title = "$title(1)";
+  }
 
   final noteData = NoteData(
-      id: backupTextLines[0].split(":")[1],
-      title: backupTextLines[1].split(":")[1],
+      id: id,
+      title: title,
       content: backupTextLines.sublist(3).join("\n"),
       ord: ord);
 
