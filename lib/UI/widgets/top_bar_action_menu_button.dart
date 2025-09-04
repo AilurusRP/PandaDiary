@@ -1,14 +1,18 @@
 import "package:flutter/material.dart";
 import 'package:panda_diary/UI/widgets/show_add_note_dialog.dart';
+import 'package:panda_diary/db/data_binders/reactive_note_list.dart';
 import 'package:panda_diary/utils/file_utils.dart';
 
 import 'action_menu_item.dart';
 
 class TopBarActionMenuButton extends StatefulWidget {
-  const TopBarActionMenuButton({Key? key, required this.onAddNoteOk})
+  const TopBarActionMenuButton(
+      {Key? key, required this.onAddNoteOk, required this.updateNoteList})
       : super(key: key);
 
   final Function onAddNoteOk;
+
+  final void Function() updateNoteList;
 
   @override
   State<TopBarActionMenuButton> createState() => _TopBarActionMenuButtonState();
@@ -44,10 +48,24 @@ class _TopBarActionMenuButtonState extends State<TopBarActionMenuButton> {
                         showDialog(
                             context: context,
                             builder: (context) {
-                              return AlertDialog(
-                                  content: Text(err.toString()));
+                              return AlertDialog(content: Text(err.toString()));
                             });
                       });
+                    },
+                  )),
+              PopupMenuItem(
+                  padding: const EdgeInsets.all(0),
+                  child: ActionMenuItem(
+                    text: "Import Notes",
+                    onPressed: () async {
+                      await importNotes(onFall: (Object? err) {
+                        showDialog(
+                            context: context,
+                            builder: (context) {
+                              return AlertDialog(content: Text(err.toString()));
+                            });
+                      });
+                      widget.updateNoteList();
                     },
                   )),
             ]);

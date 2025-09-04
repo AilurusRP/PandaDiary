@@ -38,6 +38,10 @@ class ReactiveNoteList {
     setState(() {});
   }
 
+  void update() {
+    _init();
+  }
+
   add(title) {
     setState(() {
       final noteData = NoteData(ord: _value.length, title: title, content: "");

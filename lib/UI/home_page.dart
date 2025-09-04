@@ -20,9 +20,14 @@ class _DiaryHomePageState extends State<DiaryHomePage> {
 
   @override
   void initState() {
-    _noteList = ReactiveNoteList(setState);
     super.initState();
+    _noteList = ReactiveNoteList(setState);
     createExportDirAndImportDir();
+  }
+
+  void _updateNoteList() {
+    _noteList.update();
+    setState(() {});
   }
 
   @override
@@ -33,13 +38,15 @@ class _DiaryHomePageState extends State<DiaryHomePage> {
         foregroundColor: Colors.white,
         title: Text(widget.title),
         actions: [
-          TopBarActionMenuButton(onAddNoteOk: (String noteName) {
-            if (noteName != "") {
-              _noteList.add(noteName);
-            } else {
-              _noteList.add("Untitled-${_noteList.lastUntitledIndex + 1}");
-            }
-          })
+          TopBarActionMenuButton(
+              onAddNoteOk: (String noteName) {
+                if (noteName != "") {
+                  _noteList.add(noteName);
+                } else {
+                  _noteList.add("Untitled-${_noteList.lastUntitledIndex + 1}");
+                }
+              },
+              updateNoteList: _updateNoteList)
         ],
       ),
       drawer: const SideDrawer(),

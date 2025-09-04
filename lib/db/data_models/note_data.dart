@@ -4,8 +4,14 @@ import 'package:uuid/uuid.dart';
 var uuid = const Uuid().v4;
 
 class NoteData implements CommonDataModel {
-  NoteData({required this.title, required this.content, required this.ord})
-      : id = uuid();
+  NoteData(
+      {required this.title, required this.content, required this.ord, id}) {
+    if (id == null) {
+      this.id = uuid();
+    } else {
+      this.id = id;
+    }
+  }
 
   @override
   NoteData.fromMap(Map<String, Object?> map)
@@ -23,7 +29,7 @@ class NoteData implements CommonDataModel {
   };
 
   @override
-  final String id;
+  late final String id;
 
   String title;
   String content;
@@ -35,12 +41,7 @@ class NoteData implements CommonDataModel {
 
   @override
   Map<String, dynamic> toMap() {
-    return {
-      "id": id,
-      "title": title,
-      "content": content,
-      "ord": ord
-    };
+    return {"id": id, "title": title, "content": content, "ord": ord};
   }
 
   @override
