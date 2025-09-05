@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:math';
+import 'package:flutter/material.dart';
 import 'package:panda_diary/constants/package_name.dart';
 import 'package:path/path.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -11,18 +12,16 @@ import '../db/db_manager.dart';
 void exportNotes({required Function(Object?) onFall}) async {
   Permission.manageExternalStorage.request();
   List<NoteData> data = await _getAllNotesData();
-  data.forEach((noteData) {
-    String escapedTitle = noteData.title
-        .split("")
-        .map((char) => ("|\\?*<\":>+[]/'".contains(char)) ? "_" : char)
-        .join("");
-    _writeTextToPublicDocument(
-      fileName: '$packageName.$escapedTitle.${noteData.id}.backup',
-      content:
-          "id:${noteData.id}\ntitle:${noteData.title}\ncontent:\n${noteData.content}",
-    ).onError((err, stackTrace) {
-      onFall(err);
-    });
+
+  String content = data
+      .map((noteData) =>
+          "< note-start ${noteData.id} ${noteData.title.replaceAll(" ", "%20")} >\n${noteData.content}\n< note-end ${noteData.id} >\n")
+      .join("\n");
+
+  _writeTextToPublicDocument(fileName: '$packageName.backup', content: content)
+      .onError((err, stackTrace) {
+    onFall(err);
+    debugPrint(stackTrace.toString());
   });
 }
 
@@ -34,37 +33,77 @@ Future<void> importNotes({required Function(Object?) onFall}) async {
   }
   final Directory importDir = Directory("${dir.path}/import");
   var childFilesAndDirs = importDir.listSync();
+
   var noteFiles = childFilesAndDirs.where(
-      (fse) => fse is File && _isValidNoteBackupFileName(basename(fse.path)));
+      (fse) => fse is File && basename(fse.path) == "$packageName.backup");
+  if (noteFiles.length > 1) {
+    onFall(Exception("More than 1 backup files!"));
+    return;
+  }
+  if (noteFiles.isEmpty) return;
+
+  String noteBackupContent =
+      await (noteFiles.toList()[0] as File).readAsString();
 
   final dbManager = await (DBManager<NoteData>(
           tableName: NoteData.tableName, fields: NoteData.fields))
       .open();
   List<NoteData> notesInDatabase = await dbManager.query(NoteData.fromMap);
 
-  for (int i = 0; i < noteFiles.length; i++) {
-    await _importNote(
-            noteFiles.toList()[i] as File,
-            i + notesInDatabase.map((noteData) => noteData.ord).reduce(max),
-            dbManager,
-            notesInDatabase)
+  int maxOrd = notesInDatabase.isNotEmpty
+      ? notesInDatabase.map((noteData) => noteData.ord).reduce(max)
+      : 0;
+
+  List<NoteData> noteDataList = _toNoteData(noteBackupContent);
+
+  for (int i = 0; i < noteDataList.length; i++) {
+    await _importNote(noteDataList[i], i + maxOrd, dbManager, notesInDatabase)
         .onError((err, stackTrace) {
       onFall(err);
     });
   }
 }
 
-Future<void> _importNote(File file, int ord, DBManager<NoteData> dbManager,
-    List<NoteData> notesInDatabase) async {
-  String backupText = await file.readAsString();
-  if (!_isValidNoteDataBackup(basename(file.path), backupText)) {
-    throw Exception("The note backup is not valid.");
-  }
+List<NoteData> _toNoteData(String backupContent) {
+  List<String> splitLinesOfBackupContent = backupContent.split("\n");
+  final List<NoteData> results = [];
+  String? id;
+  String? title;
+  String content = "";
+  bool isInNoteScope = false;
+  splitLinesOfBackupContent.forEach((line) {
+    if (line.startsWith("<") &&
+        line.endsWith(">") &&
+        Uuid.isValidUUID(fromString: line.split(" ")[2])) {
+      List<String> splitLine = line.split(" ");
+      if (splitLine[1] == "note-start") {
+        isInNoteScope = true;
+        id = splitLine[2];
+        title = splitLine[3];
+      } else if (isInNoteScope &&
+          splitLine[1] == "note-end" &&
+          splitLine[2] == id) {
+        if (id == null) throw Exception("Id not found!");
+        if (title == null) throw Exception("Title not found");
+        if (content.endsWith("\n")) {
+          content = content.substring(0, content.length - 1);
+        }
+        results.add(NoteData(id: id, title: title!, content: content, ord: 0));
+        isInNoteScope = false;
+        content = "";
+      }
+    } else {
+      if (isInNoteScope) content += "$line\n";
+    }
+  });
+  return results;
+}
 
-  var backupTextLines = backupText.split("\n");
-  String id = backupTextLines[0].split(":")[1];
-  String title = backupTextLines[1].split(":").sublist(1).join(":");
-  String content = backupTextLines.sublist(3).join("\n");
+Future<void> _importNote(NoteData noteDataBackup, int ord,
+    DBManager<NoteData> dbManager, List<NoteData> notesInDatabase) async {
+  String id = noteDataBackup.id;
+  String title = noteDataBackup.title;
+  String content = noteDataBackup.content;
 
   List<NoteData> duplicatedNotes =
       notesInDatabase.where((noteData) => noteData.id == id).toList();
@@ -72,53 +111,17 @@ Future<void> _importNote(File file, int ord, DBManager<NoteData> dbManager,
 
   if (duplicatedNotes.isNotEmpty) {
     if (duplicatedNotes[0].content == content) return;
+    if (notesInDatabase.any((noteData) =>
+        noteData.title == "$title(1)" && noteData.content == content)) {
+      return;
+    }
     id = const Uuid().v4();
     if (duplicatedNotes[0].title == title) title = "$title(1)";
   }
 
-  final noteData = NoteData(
-      id: id,
-      title: title,
-      content: backupTextLines.sublist(3).join("\n"),
-      ord: ord);
+  final noteData = NoteData(id: id, title: title, content: content, ord: ord);
 
   dbManager.insert(noteData);
-}
-
-bool _isValidNoteBackupFileName(String fileName) {
-  var splitFileName = fileName.split(".");
-  if (splitFileName.length < 4) return false;
-  if (splitFileName[0] != packageName) return false;
-  if (splitFileName[splitFileName.length - 1] != "backup") return false;
-
-  var uuidPattern = RegExp(
-      "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}\$");
-  if (!uuidPattern.hasMatch(splitFileName[splitFileName.length - 2])) {
-    return false;
-  }
-
-  return true;
-}
-
-bool _isValidNoteDataBackup(String fileName, String content) {
-  var contentList = content.split("\n");
-  var splitFileNameList = fileName.split(".");
-  var id = splitFileNameList[splitFileNameList.length - 2];
-
-  if (contentList[0].split(":").length != 2) {
-    return false;
-  }
-  if (contentList[0].split(":")[0] != "id") return false;
-  if (contentList[0].split(":")[1] != id) return false;
-
-  if (contentList[1].split(":").length != 2) {
-    return false;
-  }
-  if (contentList[1].split(":")[0] != "title") return false;
-
-  if (contentList[2] != "content:") return false;
-
-  return true;
 }
 
 void createExportDirAndImportDir() async {

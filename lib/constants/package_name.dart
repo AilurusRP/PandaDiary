@@ -1,3 +1,3 @@
 import 'package:flutter/services.dart';
 
-const packageName = appFlavor == "dev" ? "panda_diary_test" : "panda_diary";
+const packageName = appFlavor == "prod" ? "panda_diary" : "panda_diary_test";
