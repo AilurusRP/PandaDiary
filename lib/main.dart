@@ -10,9 +10,13 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.black,
+          dynamicSchemeVariant: DynamicSchemeVariant.fidelity,),
+      ),
       title: 'Panda Diary',
-      home: DiaryHomePage(title: 'Panda Diary'),
+      home: const DiaryHomePage(title: 'Panda Diary'),
     );
   }
 }
