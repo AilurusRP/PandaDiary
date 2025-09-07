@@ -5,7 +5,7 @@ import 'package:panda_diary/utils/file_utils.dart';
 
 import 'action_menu_item.dart';
 
-class TopBarActionMenuButton extends StatefulWidget {
+class TopBarActionMenuButton extends StatelessWidget {
   const TopBarActionMenuButton(
       {Key? key, required this.onAddNoteOk, required this.updateNoteList})
       : super(key: key);
@@ -14,11 +14,6 @@ class TopBarActionMenuButton extends StatefulWidget {
 
   final void Function() updateNoteList;
 
-  @override
-  State<TopBarActionMenuButton> createState() => _TopBarActionMenuButtonState();
-}
-
-class _TopBarActionMenuButtonState extends State<TopBarActionMenuButton> {
   @override
   Widget build(BuildContext context) {
     return PopupMenuButton(
@@ -30,7 +25,7 @@ class _TopBarActionMenuButtonState extends State<TopBarActionMenuButton> {
                     text: "New Note",
                     onPressed: () {
                       Navigator.pop(context);
-                      showAddNoteDialog(context, onOk: widget.onAddNoteOk);
+                      showAddNoteDialog(context, onOk: onAddNoteOk);
                     },
                   )),
               PopupMenuItem(
@@ -65,7 +60,7 @@ class _TopBarActionMenuButtonState extends State<TopBarActionMenuButton> {
                               return AlertDialog(content: Text(err.toString()));
                             });
                       });
-                      widget.updateNoteList();
+                      updateNoteList();
                     },
                   )),
             ]);
