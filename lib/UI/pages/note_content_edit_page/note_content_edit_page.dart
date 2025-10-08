@@ -52,6 +52,10 @@ class _NoteContentEditPageState extends State<NoteContentEditPage> {
           backgroundColor: Colors.black,
           foregroundColor: Colors.white,
           title: Text(widget.title),
+          actions: [
+            IconButton(onPressed: () {}, icon: const Icon(Icons.undo)),
+            IconButton(onPressed: () {}, icon: const Icon(Icons.redo))
+          ],
         ),
         body: Container(
             padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 10),
@@ -68,7 +72,7 @@ class _NoteContentEditPageState extends State<NoteContentEditPage> {
               onTap: _keyboardShow ? () {} : _showKeyboard,
               decoration: const InputDecoration(border: InputBorder.none),
               onChanged: (text) {
-                 _noteContentText.save(text, widget.onContentChange);
+                _noteContentText.save(text, widget.onContentChange);
               },
             )));
   }
