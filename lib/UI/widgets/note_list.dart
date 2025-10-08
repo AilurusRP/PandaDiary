@@ -69,10 +69,6 @@ class _NoteListItemState extends State<NoteListItem> {
   Widget build(BuildContext context) {
     return GestureDetector(
         onTap: () => widget.onPress(widget.index),
-        // onHorizontalDragEnd: (DragEndDetails details) {
-        //   showDeleteNoteDialog(context,
-        //       onOk: () => widget.onDelete(widget.index));
-        // },
         child: Container(
           height: 50,
           padding: const EdgeInsets.fromLTRB(20, 0, 0, 0),
@@ -101,6 +97,11 @@ class _NoteListItemState extends State<NoteListItem> {
                             showDeleteNoteDialog(context,
                                 onOk: () => widget.onDelete(widget.index));
                           },
+                        )),
+                        PopupMenuItem(
+                            child: ActionMenuItem(
+                          text: 'Edit Title',
+                          onPressed: () {},
                         ))
                       ])
             ],
