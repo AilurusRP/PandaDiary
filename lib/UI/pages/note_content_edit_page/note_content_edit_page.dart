@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:panda_diary/UI/widgets/marquee_text.dart';
 import 'package:panda_diary/db/data_binders/note_content_text.dart';
 
 class NoteContentEditPage extends StatefulWidget {
@@ -51,7 +52,14 @@ class _NoteContentEditPageState extends State<NoteContentEditPage> {
         appBar: AppBar(
           backgroundColor: Colors.black,
           foregroundColor: Colors.white,
-          title: Text(widget.title),
+          title: SizedBox(
+              height: 30,
+              child: MarqueeText(
+                text: widget.title,
+                fontSize: 18,
+                blankSpace: 15,
+                maxWidth: 180,
+              )),
           actions: [
             IconButton(onPressed: () {}, icon: const Icon(Icons.undo)),
             IconButton(onPressed: () {}, icon: const Icon(Icons.redo))

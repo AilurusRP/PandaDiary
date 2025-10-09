@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:panda_diary/UI/widgets/show_delete_note_dialog.dart';
 import 'package:panda_diary/db/data_binders/reactive_note_list.dart';
 import 'action_menu_item.dart';
+import 'marquee_text.dart';
 
 class NoteList extends StatefulWidget {
   const NoteList(
@@ -80,9 +81,11 @@ class _NoteListItemState extends State<NoteListItem> {
               Expanded(
                 child: Align(
                   alignment: Alignment.centerLeft,
-                  child: Text(
-                    widget.text,
-                    style: const TextStyle(fontSize: 18),
+                  child: MarqueeText(
+                    text: widget.text,
+                    fontSize: 18,
+                    blankSpace: 15,
+                    maxWidth: 280,
                   ),
                 ),
               ),
