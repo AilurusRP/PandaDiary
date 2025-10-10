@@ -35,12 +35,19 @@ class _NoteContentEditPageState extends State<NoteContentEditPage> {
   late final NoteContentText _noteContentText;
   bool _keyboardShow = false;
 
+  bool get _undoDisabled => _noteContentText.undoDisabled;
+
+  bool get _redoDisabled => _noteContentText.redoDisabled;
+
   @override
   void initState() {
-    _noteContentText = NoteContentText(setState,
-        controller: _controller,
-        scrollController: _scrollController,
-        id: widget.id);
+    NoteContentText.create(setState,
+            controller: _controller,
+            scrollController: _scrollController,
+            id: widget.id)
+        .then((value) {
+      _noteContentText = value;
+    });
     super.initState();
   }
 
@@ -61,8 +68,26 @@ class _NoteContentEditPageState extends State<NoteContentEditPage> {
                 maxWidth: 180,
               )),
           actions: [
-            IconButton(onPressed: () {}, icon: const Icon(Icons.undo)),
-            IconButton(onPressed: () {}, icon: const Icon(Icons.redo))
+            IconButton(
+                onPressed: () {
+                  if (!_undoDisabled) {
+                    _noteContentText.undo();
+                    widget.onContentChange(_noteContentText.toString());
+                    setState(() {});
+                  }
+                },
+                icon: Icon(Icons.undo,
+                    color: _undoDisabled ? Colors.grey : Colors.white)),
+            IconButton(
+                onPressed: () {
+                  if (!_redoDisabled) {
+                    _noteContentText.redo();
+                    widget.onContentChange(_noteContentText.toString());
+                    setState(() {});
+                  }
+                },
+                icon: Icon(Icons.redo,
+                    color: _redoDisabled ? Colors.grey : Colors.white))
           ],
         ),
         body: Container(
@@ -80,7 +105,9 @@ class _NoteContentEditPageState extends State<NoteContentEditPage> {
               onTap: _keyboardShow ? () {} : _showKeyboard,
               decoration: const InputDecoration(border: InputBorder.none),
               onChanged: (text) {
-                _noteContentText.save(text, widget.onContentChange);
+                widget.onContentChange(text);
+                _noteContentText.save(text);
+                setState(() {});
               },
             )));
   }
