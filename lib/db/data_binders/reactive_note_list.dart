@@ -59,7 +59,18 @@ class ReactiveNoteList {
     return value;
   }
 
-  void changeElemContent(int index, String newContent) {
+  void editElemTitle(int index, String newTitle) {
+    setState(() {
+      _dbManager.update(NoteData(
+          id: _value[index].id,
+          title: newTitle,
+          content: _value[index].content,
+          ord: _value[index].ord));
+      _value[index].title = newTitle;
+    });
+  }
+
+  void editElemContent(int index, String newContent) {
     setState(() {
       _value[index].content = newContent;
     });

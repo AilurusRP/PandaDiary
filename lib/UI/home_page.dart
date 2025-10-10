@@ -52,18 +52,19 @@ class _DiaryHomePageState extends State<DiaryHomePage> {
       drawer: const SideDrawer(),
       body: Center(
           child: NoteList(
-        noteList: _noteList,
-        onPress: (index) => NoteContentEditPage.navigatorPush(context,
-            id: _noteList.getId(index), title: _noteList.getTitle(index),
-            onContentChange: (String newContent) {
-          _noteList.changeElemContent(index, newContent);
-        }),
-        onDelete: _noteList.removeAt,
-        onReorder: (int oldIndex, int newIndex) async {
-          await _noteList.reorder(oldIndex, newIndex);
-          setState(() {});
-        },
-      )),
+              noteList: _noteList,
+              onPress: (index) => NoteContentEditPage.navigatorPush(context,
+                      id: _noteList.getId(index),
+                      title: _noteList.getTitle(index),
+                      onContentChange: (String newContent) {
+                    _noteList.editElemContent(index, newContent);
+                  }),
+              onDelete: _noteList.removeAt,
+              onReorder: (int oldIndex, int newIndex) async {
+                await _noteList.reorder(oldIndex, newIndex);
+                setState(() {});
+              },
+              onEditTitle: _noteList.editElemTitle)),
     );
   }
 }

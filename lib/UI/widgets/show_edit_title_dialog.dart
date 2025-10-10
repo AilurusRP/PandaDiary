@@ -1,6 +1,6 @@
 import "package:flutter/material.dart";
 
-Future<void> showAddNoteDialog(context,
+Future<void> showEditTitleDialog(context,
     {required Function onOk, onCancel}) async {
   final noteTitleTextController = TextEditingController();
 
@@ -8,13 +8,13 @@ Future<void> showAddNoteDialog(context,
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text("Add Note"),
+          title: const Text("Edit Title"),
           content: SingleChildScrollView(
             child: ListBody(
               children: [
                 Row(
                   children: [
-                    const Text("Note Title: "),
+                    const Text("New Title: "),
                     SizedBox(
                         width: 120,
                         child: TextField(

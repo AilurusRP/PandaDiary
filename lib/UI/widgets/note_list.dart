@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:panda_diary/UI/widgets/show_delete_note_dialog.dart';
+import 'package:panda_diary/UI/widgets/show_edit_title_dialog.dart';
 import 'package:panda_diary/db/data_binders/reactive_note_list.dart';
 import 'action_menu_item.dart';
 import 'marquee_text.dart';
@@ -10,13 +11,15 @@ class NoteList extends StatefulWidget {
       required this.noteList,
       required this.onPress,
       required this.onDelete,
-      required this.onReorder})
+      required this.onReorder,
+      required this.onEditTitle})
       : super(key: key);
 
   final ReactiveNoteList noteList;
   final Function onPress;
   final void Function(int) onDelete;
   final Function onReorder;
+  final void Function(int, String) onEditTitle;
 
   @override
   State<NoteList> createState() => _NoteListState();
@@ -28,11 +31,13 @@ class _NoteListState extends State<NoteList> {
     return ReorderableListView(
       children: widget.noteList.toList().asMap().entries.map<Widget>((entry) {
         return NoteListItem(
-            key: Key(entry.value.id),
-            text: entry.value.title,
-            index: entry.key,
-            onPress: widget.onPress,
-            onDelete: widget.onDelete);
+          key: Key(entry.value.id),
+          text: entry.value.title,
+          index: entry.key,
+          onPress: widget.onPress,
+          onDelete: widget.onDelete,
+          onEditTitle: widget.onEditTitle,
+        );
       }).toList(),
       onReorder: (int oldIndex, int newIndex) {
         if (oldIndex < newIndex) {
@@ -53,13 +58,15 @@ class NoteListItem extends StatefulWidget {
       required this.text,
       required this.index,
       required this.onPress,
-      required this.onDelete})
+      required this.onDelete,
+      required this.onEditTitle})
       : super(key: key);
 
   final String text;
   final int index;
   final Function onPress;
   final void Function(int) onDelete;
+  final void Function(int, String) onEditTitle;
 
   @override
   State<NoteListItem> createState() => _NoteListItemState();
@@ -104,7 +111,13 @@ class _NoteListItemState extends State<NoteListItem> {
                         PopupMenuItem(
                             child: ActionMenuItem(
                           text: 'Edit Title',
-                          onPressed: () {},
+                          onPressed: () {
+                            Navigator.pop(context);
+                            showEditTitleDialog(context,
+                                onOk: (String newTitle) {
+                              widget.onEditTitle(widget.index, newTitle);
+                            });
+                          },
                         ))
                       ])
             ],
