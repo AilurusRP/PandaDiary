@@ -11,13 +11,13 @@ class NoteContentController extends GetxController {
   final _historyList = [""].obs;
   final _currentIndex = 0.obs;
 
+  final dataLoaded = false.obs;
+
   get currentContent => _historyList[_currentIndex.value];
 
   bool get undoDisabled => _currentIndex <= 0;
 
   bool get redoDisabled {
-    print("ddddddddddddddddddddddddddd");
-    print("$_currentIndex , ${_historyList.length - 1}");
     return _currentIndex >= _historyList.length - 1;
   }
 
@@ -32,14 +32,13 @@ class NoteContentController extends GetxController {
 
     _historyList.removeLast();
     _historyList.add(_noteData.content);
+
+    dataLoaded.value = true;
   }
 
   editContent(String newContent) async {
     if (_currentIndex < _historyList.length - 1) {
-      print("rrrrrrrrrrrrrrrrrrrrrr");
-      _historyList.removeRange(
-          _currentIndex.value, _historyList.length - 1);
-      print(_historyList);
+      _historyList.removeRange(_currentIndex.value, _historyList.length - 1);
     }
     if (_historyList.length < 5) {
       _currentIndex.value++;
@@ -75,5 +74,6 @@ class NoteContentController extends GetxController {
     _historyList.clear();
     _historyList.add("");
     _currentIndex.value = 0;
+    dataLoaded.value = false;
   }
 }
