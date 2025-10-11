@@ -42,4 +42,5 @@ class ContentHistory {
       throw "No more history to redo!";
     }
   }
+
 }

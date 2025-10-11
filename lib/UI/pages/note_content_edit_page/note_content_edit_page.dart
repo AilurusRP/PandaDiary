@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:get/get.dart';
 import 'package:panda_diary/UI/widgets/marquee_text.dart';
-import 'package:panda_diary/db/data_binders/note_content_text.dart';
+import 'package:panda_diary/states/note_content_controller.dart';
 
 class NoteContentEditPage extends StatefulWidget {
   const NoteContentEditPage(
@@ -32,29 +33,25 @@ class NoteContentEditPage extends StatefulWidget {
 class _NoteContentEditPageState extends State<NoteContentEditPage> {
   final _controller = TextEditingController();
   var _scrollController = ScrollController();
-  late final NoteContentText _noteContentText;
   bool _keyboardShow = false;
-
-  bool get _undoDisabled => _noteContentText.undoDisabled;
-
-  bool get _redoDisabled => _noteContentText.redoDisabled;
 
   @override
   void initState() {
-    NoteContentText.create(setState,
-            controller: _controller,
-            scrollController: _scrollController,
-            id: widget.id)
-        .then((value) {
-      _noteContentText = value;
+    var noteContentController = Get.put(NoteContentController());
+    noteContentController.init(widget.id).then((_) {
+      _controller.text = noteContentController.currentContent;
     });
     super.initState();
   }
 
   @override
-  Widget build(BuildContext context) {
-    _afterBuild();
+  void dispose() {
+    Get.find<NoteContentController>().clear();
+    super.dispose();
+  }
 
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
           backgroundColor: Colors.black,
@@ -68,26 +65,40 @@ class _NoteContentEditPageState extends State<NoteContentEditPage> {
                 maxWidth: 180,
               )),
           actions: [
-            IconButton(
-                onPressed: () {
-                  if (!_undoDisabled) {
-                    _noteContentText.undo();
-                    widget.onContentChange(_noteContentText.toString());
-                    setState(() {});
-                  }
-                },
-                icon: Icon(Icons.undo,
-                    color: _undoDisabled ? Colors.grey : Colors.white)),
-            IconButton(
-                onPressed: () {
-                  if (!_redoDisabled) {
-                    _noteContentText.redo();
-                    widget.onContentChange(_noteContentText.toString());
-                    setState(() {});
-                  }
-                },
-                icon: Icon(Icons.redo,
-                    color: _redoDisabled ? Colors.grey : Colors.white))
+            Obx(() {
+              var noteContentController = Get.find<NoteContentController>();
+              return IconButton(
+                  onPressed: () {
+                    if (!noteContentController.undoDisabled) {
+                      noteContentController.undo();
+                      _controller.text = noteContentController.currentContent;
+                      widget.onContentChange(
+                          noteContentController.currentContent);
+                      setState(() {});
+                    }
+                  },
+                  icon: Icon(Icons.undo,
+                      color: noteContentController.undoDisabled
+                          ? Colors.grey
+                          : Colors.white));
+            }),
+            Obx(() {
+              var noteContentController = Get.find<NoteContentController>();
+              return IconButton(
+                  onPressed: () {
+                    if (!noteContentController.redoDisabled) {
+                      noteContentController.redo();
+                      _controller.text = noteContentController.currentContent;
+                      widget.onContentChange(
+                          noteContentController.currentContent);
+                      setState(() {});
+                    }
+                  },
+                  icon: Icon(Icons.redo,
+                      color: noteContentController.redoDisabled
+                          ? Colors.grey
+                          : Colors.white));
+            })
           ],
         ),
         body: Container(
@@ -106,21 +117,14 @@ class _NoteContentEditPageState extends State<NoteContentEditPage> {
               decoration: const InputDecoration(border: InputBorder.none),
               onChanged: (text) {
                 widget.onContentChange(text);
-                _noteContentText.save(text);
+                Get.find<NoteContentController>().editContent(text);
                 setState(() {});
               },
             )));
   }
 
-  Future<void> _afterBuild() async {
-    if (_noteContentText.init == null) return;
-    await Future.delayed(Duration.zero);
-    _noteContentText.init!();
-  }
-
   _showKeyboard() => setState(() {
         _keyboardShow = true;
         _scrollController = ScrollController();
-        _noteContentText.setNewScrollController(_scrollController);
       });
 }
