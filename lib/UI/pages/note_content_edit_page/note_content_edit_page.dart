@@ -40,6 +40,10 @@ class _NoteContentEditPageState extends State<NoteContentEditPage> {
     var noteContentController = Get.put(NoteContentController());
     noteContentController.init(widget.id).then((_) {
       _controller.text = noteContentController.currentContent;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+        setState(() {});
+      });
     });
     super.initState();
   }
@@ -52,14 +56,6 @@ class _NoteContentEditPageState extends State<NoteContentEditPage> {
 
   @override
   Widget build(BuildContext context) {
-    // https://stackoverflow.com/questions/49466556/flutter-run-method-on-widget-build-complete
-    // "it depends on your use case. At times, you should call it in other than initState, eg. in build."
-    // "you should call setState within yourFunction method to make it working"
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
-      setState(() {});
-    });
-
     return Scaffold(
         appBar: AppBar(
           backgroundColor: Colors.black,
