@@ -45,6 +45,13 @@ class TopBarActionMenuButton extends StatelessWidget {
                             builder: (context) {
                               return AlertDialog(content: Text(err.toString()));
                             });
+                      }, onOk: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Successfully Exported'),
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
                       });
                     },
                   )),
@@ -59,6 +66,21 @@ class TopBarActionMenuButton extends StatelessWidget {
                             builder: (context) {
                               return AlertDialog(content: Text(err.toString()));
                             });
+                      }, onOk: (importedNotesCount) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                                'Successfully Imported $importedNotesCount Notes'),
+                            duration: const Duration(seconds: 2),
+                          ),
+                        );
+                      }, onNotFound: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('No Backups Found'),
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
                       });
                       updateNoteList();
                     },

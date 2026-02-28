@@ -9,7 +9,8 @@ import 'package:uuid/uuid.dart';
 import '../db/data_models/note_data.dart';
 import '../db/db_manager.dart';
 
-void exportNotes({required Function(Object?) onFall}) async {
+void exportNotes(
+    {required Function(Object?) onFall, required Function() onOk}) async {
   Permission.manageExternalStorage.request();
   List<NoteData> data = await _getAllNotesData();
 
@@ -19,13 +20,18 @@ void exportNotes({required Function(Object?) onFall}) async {
       .join("\n");
 
   _writeTextToPublicDocument(fileName: '$packageName.backup', content: content)
-      .onError((err, stackTrace) {
+      .then((_) {
+    onOk();
+  }).onError((err, stackTrace) {
     onFall(err);
     debugPrint(stackTrace.toString());
   });
 }
 
-Future<void> importNotes({required Function(Object?) onFall}) async {
+Future<void> importNotes(
+    {required Function(Object?) onFall,
+    required Function(int) onOk,
+    required Function() onNotFound}) async {
   Permission.manageExternalStorage.request();
   final Directory dir = Directory("/storage/emulated/0/$packageName");
   if (!await dir.exists()) {
@@ -36,11 +42,11 @@ Future<void> importNotes({required Function(Object?) onFall}) async {
 
   var noteFiles = childFilesAndDirs.where(
       (fse) => fse is File && basename(fse.path) == "$packageName.backup");
-  if (noteFiles.length > 1) {
-    onFall(Exception("More than 1 backup files!"));
+
+  if (noteFiles.isEmpty) {
+    onNotFound();
     return;
   }
-  if (noteFiles.isEmpty) return;
 
   String noteBackupContent =
       await (noteFiles.toList()[0] as File).readAsString();
@@ -56,12 +62,17 @@ Future<void> importNotes({required Function(Object?) onFall}) async {
 
   List<NoteData> noteDataList = _toNoteData(noteBackupContent);
 
+  int importedNotesCount = 0;
   for (int i = 0; i < noteDataList.length; i++) {
-    await _importNote(noteDataList[i], i + maxOrd, dbManager, notesInDatabase)
-        .onError((err, stackTrace) {
+    try {
+      var imported = await _importNote(
+          noteDataList[i], i + maxOrd, dbManager, notesInDatabase);
+      if (imported) importedNotesCount++;
+    } catch (err) {
       onFall(err);
-    });
+    }
   }
+  onOk(importedNotesCount);
 }
 
 List<NoteData> _toNoteData(String backupContent) {
@@ -99,7 +110,7 @@ List<NoteData> _toNoteData(String backupContent) {
   return results;
 }
 
-Future<void> _importNote(NoteData noteDataBackup, int ord,
+Future<bool> _importNote(NoteData noteDataBackup, int ord,
     DBManager<NoteData> dbManager, List<NoteData> notesInDatabase) async {
   String id = noteDataBackup.id;
   String title = noteDataBackup.title;
@@ -110,10 +121,10 @@ Future<void> _importNote(NoteData noteDataBackup, int ord,
   assert(duplicatedNotes.length <= 1);
 
   if (duplicatedNotes.isNotEmpty) {
-    if (duplicatedNotes[0].content == content) return;
+    if (duplicatedNotes[0].content == content) return false;
     if (notesInDatabase.any((noteData) =>
         noteData.title == "$title(1)" && noteData.content == content)) {
-      return;
+      return false;
     }
     id = const Uuid().v4();
     if (duplicatedNotes[0].title == title) title = "$title(1)";
@@ -122,6 +133,8 @@ Future<void> _importNote(NoteData noteDataBackup, int ord,
   final noteData = NoteData(id: id, title: title, content: content, ord: ord);
 
   dbManager.insert(noteData);
+
+  return true;
 }
 
 void createExportDirAndImportDir() async {
