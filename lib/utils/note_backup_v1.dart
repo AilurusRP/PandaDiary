@@ -1,4 +1,4 @@
-import 'package:panda_diary/db/data_models/note_data_v1.dart';
+import 'package:panda_diary/db/data_models/note_data.dart';
 
 class NoteBackupV1 {
   NoteBackupV1({required this.createdAt, required this.data});
@@ -16,6 +16,6 @@ class NoteBackupV1 {
   }
 
   factory NoteBackupV1.fromJson(Map<String, dynamic> json) {
-    
+    return NoteBackupV1(createdAt: json["createdAt"], data: json["data"]);
   }
 }

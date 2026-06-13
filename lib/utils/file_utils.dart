@@ -1,7 +1,9 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:panda_diary/constants/package_name.dart';
+import 'package:panda_diary/utils/note_backup_v1.dart';
 import 'package:path/path.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:uuid/uuid.dart';
@@ -14,12 +16,10 @@ void exportNotes(
   Permission.manageExternalStorage.request();
   List<NoteData> data = await _getAllNotesData();
 
-  String content = data
-      .map((noteData) =>
-          "< note-start ${noteData.id} ${noteData.title.replaceAll(" ", "%20")} >\n${noteData.content}\n< note-end ${noteData.id} >\n")
-      .join("\n");
+  String content =
+      jsonEncode(NoteBackupV1(createdAt: DateTime.now(), data: data));
 
-  _writeTextToPublicDocument(fileName: '$packageName.backup', content: content)
+  _writeTextToPublicDocument(fileName: '$packageName.backup.json', content: content)
       .then((_) {
     onOk();
   }).onError((err, stackTrace) {
@@ -29,6 +29,32 @@ void exportNotes(
 }
 
 Future<void> importNotes(
+    {required Function(Object?) onFall,
+    required Function(int) onOk,
+    required Function() onNotFound}) async {
+  importNotesOld(onFall: onFall, onOk: onOk, onNotFound: onNotFound);
+}
+
+// void exportNotes(
+//     {required Function(Object?) onFall, required Function() onOk}) async {
+//   Permission.manageExternalStorage.request();
+//   List<NoteData> data = await _getAllNotesData();
+//
+//   String content = data
+//       .map((noteData) =>
+//           "< note-start ${noteData.id} ${noteData.title.replaceAll(" ", "%20")} >\n${noteData.content}\n< note-end ${noteData.id} >\n")
+//       .join("\n");
+//
+//   _writeTextToPublicDocument(fileName: '$packageName.backup', content: content)
+//       .then((_) {
+//     onOk();
+//   }).onError((err, stackTrace) {
+//     onFall(err);
+//     debugPrint(stackTrace.toString());
+//   });
+// }
+
+Future<void> importNotesOld(
     {required Function(Object?) onFall,
     required Function(int) onOk,
     required Function() onNotFound}) async {
@@ -60,7 +86,7 @@ Future<void> importNotes(
       ? notesInDatabase.map((noteData) => noteData.ord).reduce(max)
       : 0;
 
-  List<NoteData> noteDataList = _toNoteData(noteBackupContent);
+  List<NoteData> noteDataList = _toNoteDataOld(noteBackupContent);
 
   int importedNotesCount = 0;
   for (int i = 0; i < noteDataList.length; i++) {
@@ -75,7 +101,7 @@ Future<void> importNotes(
   onOk(importedNotesCount);
 }
 
-List<NoteData> _toNoteData(String backupContent) {
+List<NoteData> _toNoteDataOld(String backupContent) {
   List<String> splitLinesOfBackupContent = backupContent.split("\n");
   final List<NoteData> results = [];
   String? id;
