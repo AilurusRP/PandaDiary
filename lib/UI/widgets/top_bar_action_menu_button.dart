@@ -59,7 +59,7 @@ class TopBarActionMenuButton extends StatelessWidget {
                   child: ActionMenuItem(
                     text: "Import Notes",
                     onPressed: () async {
-                      await importNotesOld(onFall: (Object? err) {
+                      await importNotes(onFall: (Object? err) {
                         showDialog(
                             context: context,
                             builder: (context) {

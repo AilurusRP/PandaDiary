@@ -19,7 +19,8 @@ void exportNotes(
   String content =
       jsonEncode(NoteBackupV1(createdAt: DateTime.now(), data: data));
 
-  _writeTextToPublicDocument(fileName: '$packageName.backup.json', content: content)
+  _writeTextToPublicDocument(
+          fileName: '$packageName.backup.json', content: content)
       .then((_) {
     onOk();
   }).onError((err, stackTrace) {
@@ -32,7 +33,61 @@ Future<void> importNotes(
     {required Function(Object?) onFall,
     required Function(int) onOk,
     required Function() onNotFound}) async {
-  importNotesOld(onFall: onFall, onOk: onOk, onNotFound: onNotFound);
+  Permission.manageExternalStorage.request();
+  final Directory dir = Directory("/storage/emulated/0/$packageName");
+  if (!await dir.exists()) {
+    await dir.create(recursive: true);
+  }
+  final Directory importDir = Directory("${dir.path}/import");
+  var childFilesAndDirs = importDir.listSync();
+
+  var noteFiles = childFilesAndDirs.where(
+      (fse) => fse is File && basename(fse.path) == "$packageName.backup.json");
+  if (noteFiles.isEmpty) {
+    onNotFound();
+    return;
+  }
+  String noteBackupContent =
+      await (noteFiles.toList()[0] as File).readAsString();
+
+  final dbManager = await (DBManager<NoteData>(
+          tableName: NoteData.tableName, fields: NoteData.fields))
+      .open();
+  List<NoteData> notesInDatabase = await dbManager.query(NoteData.fromMap);
+
+  int maxOrd = notesInDatabase.isNotEmpty
+      ? notesInDatabase.map((noteData) => noteData.ord).reduce(max)
+      : 0;
+
+  List<NoteData> noteDataList;
+  try {
+    Map<String, dynamic> jsonData = jsonDecode(noteBackupContent);
+    if (jsonData["version"] == 1) {
+      noteDataList = NoteBackupV1.fromJson({
+        "version": jsonData["version"],
+        "createdAt": DateTime.fromMillisecondsSinceEpoch(jsonData['createdAt']),
+        "data": (jsonData["data"] as List)
+            .map((data) => NoteData.fromMap(data as Map<String, dynamic>))
+            .toList()
+      }).data;
+    } else {
+      return onFall("Format Error!");
+    }
+  } catch (err, stack) {
+    return onFall(err.toString() + stack.toString());
+  }
+
+  int importedNotesCount = 0;
+  for (int i = 0; i < noteDataList.length; i++) {
+    try {
+      var imported = await _importNote(
+          noteDataList[i], i + maxOrd, dbManager, notesInDatabase);
+      if (imported) importedNotesCount++;
+    } catch (err) {
+      onFall(err);
+    }
+  }
+  onOk(importedNotesCount);
 }
 
 // void exportNotes(
@@ -54,87 +109,47 @@ Future<void> importNotes(
 //   });
 // }
 
-Future<void> importNotesOld(
-    {required Function(Object?) onFall,
-    required Function(int) onOk,
-    required Function() onNotFound}) async {
-  Permission.manageExternalStorage.request();
-  final Directory dir = Directory("/storage/emulated/0/$packageName");
-  if (!await dir.exists()) {
-    await dir.create(recursive: true);
-  }
-  final Directory importDir = Directory("${dir.path}/import");
-  var childFilesAndDirs = importDir.listSync();
+// Future<void> importNotesOld(
+//     {required Function(Object?) onFall,
+//     required Function(int) onOk,
+//     required Function() onNotFound}) async {
+//   List<NoteData> noteDataList = _toNoteDataOld(noteBackupContent);
+// }
 
-  var noteFiles = childFilesAndDirs.where(
-      (fse) => fse is File && basename(fse.path) == "$packageName.backup");
-
-  if (noteFiles.isEmpty) {
-    onNotFound();
-    return;
-  }
-
-  String noteBackupContent =
-      await (noteFiles.toList()[0] as File).readAsString();
-
-  final dbManager = await (DBManager<NoteData>(
-          tableName: NoteData.tableName, fields: NoteData.fields))
-      .open();
-  List<NoteData> notesInDatabase = await dbManager.query(NoteData.fromMap);
-
-  int maxOrd = notesInDatabase.isNotEmpty
-      ? notesInDatabase.map((noteData) => noteData.ord).reduce(max)
-      : 0;
-
-  List<NoteData> noteDataList = _toNoteDataOld(noteBackupContent);
-
-  int importedNotesCount = 0;
-  for (int i = 0; i < noteDataList.length; i++) {
-    try {
-      var imported = await _importNote(
-          noteDataList[i], i + maxOrd, dbManager, notesInDatabase);
-      if (imported) importedNotesCount++;
-    } catch (err) {
-      onFall(err);
-    }
-  }
-  onOk(importedNotesCount);
-}
-
-List<NoteData> _toNoteDataOld(String backupContent) {
-  List<String> splitLinesOfBackupContent = backupContent.split("\n");
-  final List<NoteData> results = [];
-  String? id;
-  String? title;
-  String content = "";
-  bool isInNoteScope = false;
-  splitLinesOfBackupContent.forEach((line) {
-    if (line.startsWith("<") &&
-        line.endsWith(">") &&
-        Uuid.isValidUUID(fromString: line.split(" ")[2])) {
-      List<String> splitLine = line.split(" ");
-      if (splitLine[1] == "note-start") {
-        isInNoteScope = true;
-        id = splitLine[2];
-        title = splitLine[3];
-      } else if (isInNoteScope &&
-          splitLine[1] == "note-end" &&
-          splitLine[2] == id) {
-        if (id == null) throw Exception("Id not found!");
-        if (title == null) throw Exception("Title not found");
-        if (content.endsWith("\n")) {
-          content = content.substring(0, content.length - 1);
-        }
-        results.add(NoteData(id: id, title: title!, content: content, ord: 0));
-        isInNoteScope = false;
-        content = "";
-      }
-    } else {
-      if (isInNoteScope) content += "$line\n";
-    }
-  });
-  return results;
-}
+// List<NoteData> _toNoteDataOld(String backupContent) {
+//   List<String> splitLinesOfBackupContent = backupContent.split("\n");
+//   final List<NoteData> results = [];
+//   String? id;
+//   String? title;
+//   String content = "";
+//   bool isInNoteScope = false;
+//   splitLinesOfBackupContent.forEach((line) {
+//     if (line.startsWith("<") &&
+//         line.endsWith(">") &&
+//         Uuid.isValidUUID(fromString: line.split(" ")[2])) {
+//       List<String> splitLine = line.split(" ");
+//       if (splitLine[1] == "note-start") {
+//         isInNoteScope = true;
+//         id = splitLine[2];
+//         title = splitLine[3];
+//       } else if (isInNoteScope &&
+//           splitLine[1] == "note-end" &&
+//           splitLine[2] == id) {
+//         if (id == null) throw Exception("Id not found!");
+//         if (title == null) throw Exception("Title not found");
+//         if (content.endsWith("\n")) {
+//           content = content.substring(0, content.length - 1);
+//         }
+//         results.add(NoteData(id: id, title: title!, content: content, ord: 0));
+//         isInNoteScope = false;
+//         content = "";
+//       }
+//     } else {
+//       if (isInNoteScope) content += "$line\n";
+//     }
+//   });
+//   return results;
+// }
 
 Future<bool> _importNote(NoteData noteDataBackup, int ord,
     DBManager<NoteData> dbManager, List<NoteData> notesInDatabase) async {
