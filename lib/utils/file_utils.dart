@@ -2,7 +2,9 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:panda_diary/constants/package_name.dart';
+import 'package:panda_diary/db/db_service.dart';
 import 'package:panda_diary/utils/note_backup_v1.dart';
 import 'package:path/path.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -50,9 +52,7 @@ Future<void> importNotes(
   String noteBackupContent =
       await (noteFiles.toList()[0] as File).readAsString();
 
-  final dbManager = await (DBManager<NoteData>(
-          tableName: NoteData.tableName, fields: NoteData.fields))
-      .open();
+  final dbManager = await (Get.find<DBService>().notesDB).open();
   List<NoteData> notesInDatabase = await dbManager.query(NoteData.fromMap);
 
   int maxOrd = notesInDatabase.isNotEmpty
@@ -192,8 +192,7 @@ void createExportDirAndImportDir() async {
 
 Future<List<NoteData>> _getAllNotesData() async {
   List<NoteData> value = [];
-  final dbManager = DBManager<NoteData>(
-      tableName: NoteData.tableName, fields: NoteData.fields);
+  final dbManager = Get.find<DBService>().notesDB;
   value = await (await dbManager.open()).query(NoteData.fromMap);
   return value;
 }

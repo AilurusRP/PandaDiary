@@ -1,11 +1,10 @@
 import 'package:get/get.dart';
+import 'package:panda_diary/db/db_service.dart';
 
 import '../db/data_models/note_data.dart';
-import '../db/db_manager.dart';
 
 class NoteContentController extends GetxController {
-  final _dbManager = DBManager<NoteData>(
-      tableName: NoteData.tableName, fields: NoteData.fields);
+  final _dbManager = Get.find<DBService>().notesDB;
   late NoteData _noteData;
 
   final _historyList = [""].obs;

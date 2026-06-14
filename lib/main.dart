@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:panda_diary/UI/home_page.dart';
 import 'package:panda_diary/constants/package_name.dart';
 
-void main() {
+import 'db/db_service.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Get.putAsync<DBService>(() => DBService().init());
+
   runApp(const MyApp());
 }
 

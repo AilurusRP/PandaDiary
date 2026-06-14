@@ -1,12 +1,12 @@
 import 'dart:math';
 
+import 'package:get/get.dart';
 import 'package:panda_diary/db/data_models/note_data.dart';
-import 'package:panda_diary/db/db_manager.dart';
+import 'package:panda_diary/db/db_service.dart';
 
 class ReactiveNoteList {
   List<NoteData> _value = [];
-  final _dbManager = DBManager<NoteData>(
-      tableName: NoteData.tableName, fields: NoteData.fields);
+  final _dbManager = Get.find<DBService>().notesDB;
   late final Function setState;
 
   ReactiveNoteList(this.setState) {
