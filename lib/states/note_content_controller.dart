@@ -24,9 +24,9 @@ class NoteContentController extends GetxController {
     if (_historyList.length != 1 ||
         _historyList[0] != "" ||
         _currentIndex.value != 0) {
-      throw "States hasn't been cleared!";
+      throw Exception("States hasn't been cleared!");
     }
-    _noteData = (await (await _dbManager.open()).query(NoteData.fromMap))
+    _noteData = (await _dbManager.query(NoteData.fromMap))
         .firstWhere((elem) => elem.id == id);
 
     _historyList.removeLast();
@@ -55,7 +55,7 @@ class NoteContentController extends GetxController {
       _noteData.setContent(currentContent);
       await _dbManager.update(_noteData);
     } else {
-      throw "No more history to undo!";
+      throw Exception("No more history to undo!");
     }
   }
 
@@ -65,7 +65,7 @@ class NoteContentController extends GetxController {
       _noteData.setContent(currentContent);
       await _dbManager.update(_noteData);
     } else {
-      throw "No more history to redo!";
+      throw Exception("No more history to redo!");
     }
   }
 

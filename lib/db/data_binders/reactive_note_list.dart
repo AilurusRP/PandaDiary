@@ -1,13 +1,19 @@
 import 'dart:math';
 
 import 'package:get/get.dart';
+import 'package:panda_diary/db/data_models/app_config.dart';
+import 'package:panda_diary/db/data_models/folder_data.dart';
 import 'package:panda_diary/db/data_models/note_data.dart';
 import 'package:panda_diary/db/db_service.dart';
+import 'package:panda_diary/states/app_config_controller.dart';
 
 class ReactiveNoteList {
   List<NoteData> _value = [];
-  final _dbManager = Get.find<DBService>().notesDB;
+  final _notesDB = Get.find<DBService>().notesDB;
+  // final _appConfigDB = Get.find<DBService>().appConfigDB;
+  // final _folderDB = Get.find<DBService>().foldersDB;
   late final Function setState;
+  // late String _defaultFolderId;
 
   ReactiveNoteList(this.setState) {
     _init();
@@ -34,7 +40,8 @@ class ReactiveNoteList {
   }
 
   void _init() async {
-    _value = await (await _dbManager.open()).query(NoteData.fromMap);
+    _value = await _notesDB.query(NoteData.fromMap);
+
     setState(() {});
   }
 
@@ -44,16 +51,20 @@ class ReactiveNoteList {
 
   add(title) {
     setState(() {
-      final noteData = NoteData(ord: _value.length, title: title, content: "");
+      final noteData = NoteData(
+          ord: _value.length,
+          title: title,
+          content: "",
+          folderId: Get.find<AppConfigController>().defaultFolderId);
       _value.add(noteData);
-      _dbManager.insert(noteData);
+      _notesDB.insert(noteData);
     });
   }
 
   NoteData removeAt(index) {
     late NoteData value;
     setState(() {
-      _dbManager.delete(_value[index].id);
+      _notesDB.delete(_value[index].id);
       value = _value.removeAt(index);
     });
     return value;
@@ -61,11 +72,12 @@ class ReactiveNoteList {
 
   void editElemTitle(int index, String newTitle) {
     setState(() {
-      _dbManager.update(NoteData(
+      _notesDB.update(NoteData(
           id: _value[index].id,
           title: newTitle,
           content: _value[index].content,
-          ord: _value[index].ord));
+          ord: _value[index].ord,
+          folderId: Get.find<AppConfigController>().defaultFolderId));
       _value[index].title = newTitle;
     });
   }
@@ -83,20 +95,22 @@ class ReactiveNoteList {
     _value.insert(newIndex, temp);
 
     var oldNote = oldValue[oldIndex];
-    await _dbManager.update(NoteData.fromMap({
+    await _notesDB.update(NoteData.fromMap({
       "id": oldNote.id,
       "title": oldNote.title,
       "content": oldNote.content,
+      "folder_id": oldNote.folderId,
       "ord": newIndex
     }));
 
     if (newIndex > oldIndex) {
       for (int i = oldIndex + 1; i <= newIndex; i++) {
         var oldNote = oldValue[i];
-        await _dbManager.update(NoteData.fromMap({
+        await _notesDB.update(NoteData.fromMap({
           "id": oldNote.id,
           "title": oldNote.title,
           "content": oldNote.content,
+          "folder_id": oldNote.folderId,
           "ord": i - 1
         }));
       }
@@ -105,10 +119,11 @@ class ReactiveNoteList {
     if (newIndex < oldIndex) {
       for (int i = newIndex; i < oldIndex; i++) {
         var oldNote = oldValue[i];
-        await _dbManager.update(NoteData.fromMap({
+        await _notesDB.update(NoteData.fromMap({
           "id": oldNote.id,
           "title": oldNote.title,
           "content": oldNote.content,
+          "folder_id": oldNote.folderId,
           "ord": i + 1
         }));
       }

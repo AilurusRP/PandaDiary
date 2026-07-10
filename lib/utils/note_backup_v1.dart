@@ -1,11 +1,11 @@
-import 'package:panda_diary/db/data_models/note_data.dart';
+import '../db/data_models/old_note_data.dart';
 
 class NoteBackupV1 {
   NoteBackupV1({required this.createdAt, required this.data});
 
   static const int version = 1;
   DateTime createdAt;
-  List<NoteData> data;
+  List<OldNoteData> data;
 
   Map<String, dynamic> toJson() {
     return {

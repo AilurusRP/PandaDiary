@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:panda_diary/constants/package_name.dart';
+import 'package:panda_diary/db/data_models/old_note_data.dart';
 import 'package:panda_diary/db/db_service.dart';
 import 'package:panda_diary/utils/note_backup_v1.dart';
 import 'package:path/path.dart';
@@ -12,6 +13,8 @@ import 'package:uuid/uuid.dart';
 
 import '../db/data_models/note_data.dart';
 import '../db/db_manager.dart';
+import '../states/app_config_controller.dart';
+import 'note_backup_v2.dart';
 
 void exportNotes(
     {required Function(Object?) onFall, required Function() onOk}) async {
@@ -19,7 +22,7 @@ void exportNotes(
   List<NoteData> data = await _getAllNotesData();
 
   String content =
-      jsonEncode(NoteBackupV1(createdAt: DateTime.now(), data: data));
+      jsonEncode(NoteBackupV2(createdAt: DateTime.now(), data: data));
 
   _writeTextToPublicDocument(
           fileName: '$packageName.backup.json', content: content)
@@ -52,7 +55,7 @@ Future<void> importNotes(
   String noteBackupContent =
       await (noteFiles.toList()[0] as File).readAsString();
 
-  final dbManager = await (Get.find<DBService>().notesDB).open();
+  final dbManager = Get.find<DBService>().notesDB;
   List<NoteData> notesInDatabase = await dbManager.query(NoteData.fromMap);
 
   int maxOrd = notesInDatabase.isNotEmpty
@@ -62,8 +65,24 @@ Future<void> importNotes(
   List<NoteData> noteDataList;
   try {
     Map<String, dynamic> jsonData = jsonDecode(noteBackupContent);
+
     if (jsonData["version"] == 1) {
+      var defaultFolderId = Get.find<AppConfigController>().defaultFolderId;
+
       noteDataList = NoteBackupV1.fromJson({
+        "version": jsonData["version"],
+        "createdAt": DateTime.fromMillisecondsSinceEpoch(jsonData['createdAt']),
+        "data": (jsonData["data"] as List)
+            .map<OldNoteData>(
+                (data) => OldNoteData.fromMap(data as Map<String, dynamic>))
+            .toList()
+      })
+          .data
+          .map<NoteData>(
+              (oldNoteData) => oldNoteData.toNewNoteData(defaultFolderId))
+          .toList();
+    } else if (jsonData["version"] == 2) {
+      noteDataList = NoteBackupV2.fromJson({
         "version": jsonData["version"],
         "createdAt": DateTime.fromMillisecondsSinceEpoch(jsonData['createdAt']),
         "data": (jsonData["data"] as List)
@@ -90,72 +109,12 @@ Future<void> importNotes(
   onOk(importedNotesCount);
 }
 
-// void exportNotes(
-//     {required Function(Object?) onFall, required Function() onOk}) async {
-//   Permission.manageExternalStorage.request();
-//   List<NoteData> data = await _getAllNotesData();
-//
-//   String content = data
-//       .map((noteData) =>
-//           "< note-start ${noteData.id} ${noteData.title.replaceAll(" ", "%20")} >\n${noteData.content}\n< note-end ${noteData.id} >\n")
-//       .join("\n");
-//
-//   _writeTextToPublicDocument(fileName: '$packageName.backup', content: content)
-//       .then((_) {
-//     onOk();
-//   }).onError((err, stackTrace) {
-//     onFall(err);
-//     debugPrint(stackTrace.toString());
-//   });
-// }
-
-// Future<void> importNotesOld(
-//     {required Function(Object?) onFall,
-//     required Function(int) onOk,
-//     required Function() onNotFound}) async {
-//   List<NoteData> noteDataList = _toNoteDataOld(noteBackupContent);
-// }
-
-// List<NoteData> _toNoteDataOld(String backupContent) {
-//   List<String> splitLinesOfBackupContent = backupContent.split("\n");
-//   final List<NoteData> results = [];
-//   String? id;
-//   String? title;
-//   String content = "";
-//   bool isInNoteScope = false;
-//   splitLinesOfBackupContent.forEach((line) {
-//     if (line.startsWith("<") &&
-//         line.endsWith(">") &&
-//         Uuid.isValidUUID(fromString: line.split(" ")[2])) {
-//       List<String> splitLine = line.split(" ");
-//       if (splitLine[1] == "note-start") {
-//         isInNoteScope = true;
-//         id = splitLine[2];
-//         title = splitLine[3];
-//       } else if (isInNoteScope &&
-//           splitLine[1] == "note-end" &&
-//           splitLine[2] == id) {
-//         if (id == null) throw Exception("Id not found!");
-//         if (title == null) throw Exception("Title not found");
-//         if (content.endsWith("\n")) {
-//           content = content.substring(0, content.length - 1);
-//         }
-//         results.add(NoteData(id: id, title: title!, content: content, ord: 0));
-//         isInNoteScope = false;
-//         content = "";
-//       }
-//     } else {
-//       if (isInNoteScope) content += "$line\n";
-//     }
-//   });
-//   return results;
-// }
-
 Future<bool> _importNote(NoteData noteDataBackup, int ord,
     DBManager<NoteData> dbManager, List<NoteData> notesInDatabase) async {
   String id = noteDataBackup.id;
   String title = noteDataBackup.title;
   String content = noteDataBackup.content;
+  String folderId = noteDataBackup.folderId;
 
   List<NoteData> duplicatedNotes =
       notesInDatabase.where((noteData) => noteData.id == id).toList();
@@ -171,7 +130,8 @@ Future<bool> _importNote(NoteData noteDataBackup, int ord,
     if (duplicatedNotes[0].title == title) title = "$title(1)";
   }
 
-  final noteData = NoteData(id: id, title: title, content: content, ord: ord);
+  final noteData = NoteData(
+      id: id, title: title, content: content, ord: ord, folderId: folderId);
 
   dbManager.insert(noteData);
 

@@ -1,15 +1,13 @@
 import 'package:panda_diary/db/data_models/common_data_model.dart';
 import 'package:uuid/uuid.dart';
 
+import 'note_data.dart';
+
 var uuid = const Uuid().v4;
 
-class NoteData implements CommonDataModel {
-  NoteData(
-      {required this.title,
-      required this.content,
-      required this.folderId,
-      required this.ord,
-      id}) {
+class OldNoteData implements CommonDataModel {
+  OldNoteData(
+      {required this.title, required this.content, required this.ord, id}) {
     if (id == null) {
       this.id = uuid();
     } else {
@@ -22,7 +20,6 @@ class NoteData implements CommonDataModel {
 
   String title;
   String content;
-  String folderId;
   int ord;
 
   void setContent(String newContent) {
@@ -38,23 +35,21 @@ class NoteData implements CommonDataModel {
     "ord": "INTEGER",
   };
 
+  NoteData toNewNoteData(String defaultFolderId) {
+    return NoteData(
+        title: title, content: content, folderId: defaultFolderId, ord: ord);
+  }
+
   @override
-  NoteData.fromMap(Map<String, Object?> map)
+  OldNoteData.fromMap(Map<String, Object?> map)
       : id = map["id"] as String,
         title = map["title"] as String,
         content = map["content"] as String,
-        folderId = map["folder_id"] as String,
         ord = map["ord"] as int;
 
   @override
   Map<String, dynamic> toMap() {
-    return {
-      "id": id,
-      "title": title,
-      "content": content,
-      "ord": ord,
-      "folder_id": folderId
-    };
+    return {"id": id, "title": title, "content": content, "ord": ord};
   }
 
   @override
