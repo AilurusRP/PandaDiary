@@ -35,7 +35,6 @@ class NoteList extends StatelessWidget {
             if (oldIndex < newIndex) {
               newIndex -= 1;
             }
-
             _noteList.reorder(oldIndex, newIndex);
           },
         ));

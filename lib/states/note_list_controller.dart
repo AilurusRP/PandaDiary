@@ -3,11 +3,12 @@ import 'dart:math';
 import 'package:get/get.dart';
 import 'package:panda_diary/db/data_models/note_data.dart';
 import 'package:panda_diary/db/db_service.dart';
-import 'package:panda_diary/states/app_config_controller.dart';
+import 'package:panda_diary/states/folder_controller.dart';
 
 class NoteListController extends GetxController {
   final _notesDB = Get.find<DBService>().notesDB;
   final RxList _notes = [].obs;
+  final _folderController = Get.find<FolderController>();
 
   NoteListController() {
     _init();
@@ -46,7 +47,7 @@ class NoteListController extends GetxController {
         ord: _notes.length,
         title: title,
         content: "",
-        folderId: Get.find<AppConfigController>().defaultFolderId);
+        folderId: _folderController.currentFolderId);
     _notes.add(noteData);
     _notesDB.insert(noteData);
   }
@@ -64,7 +65,7 @@ class NoteListController extends GetxController {
         title: newTitle,
         content: _notes[index].content,
         ord: _notes[index].ord,
-        folderId: Get.find<AppConfigController>().defaultFolderId));
+        folderId: _folderController.currentFolderId));
     _notes[index].title = newTitle;
     _notes.refresh();
   }

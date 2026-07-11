@@ -1,19 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:panda_diary/UI/widgets/folder_list.dart';
 
-class SideDrawer extends StatefulWidget {
+class SideDrawer extends StatelessWidget {
   const SideDrawer({Key? key}) : super(key: key);
 
   @override
-  State<SideDrawer> createState() => _SideDrawerState();
-}
-
-class _SideDrawerState extends State<SideDrawer> {
-  @override
   Widget build(BuildContext context) {
     return Drawer(
-      child: ListView(
-        children: [],
+        child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 50),
+      child: Column(
+        children: [
+          const Text(
+            "Folders",
+            style: TextStyle(fontSize: 22),
+          ),
+          Expanded(child: FolderList())
+        ],
       ),
-    );
+    ));
   }
 }

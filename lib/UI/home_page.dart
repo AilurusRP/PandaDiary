@@ -5,25 +5,13 @@ import 'package:panda_diary/UI/widgets/top_bar_action_menu_button.dart';
 import 'package:panda_diary/UI/widgets/note_list.dart';
 import 'package:panda_diary/UI/widgets/side_drawer.dart';
 import 'package:panda_diary/states/note_list_controller.dart';
-import 'package:panda_diary/utils/file_utils.dart';
 
-class DiaryHomePage extends StatefulWidget {
-  const DiaryHomePage({Key? key, required this.title}) : super(key: key);
+class DiaryHomePage extends StatelessWidget {
+   DiaryHomePage({Key? key, required this.title}) : super(key: key);
 
   final String title;
 
-  @override
-  createState() => _DiaryHomePageState();
-}
-
-class _DiaryHomePageState extends State<DiaryHomePage> {
   final NoteListController _noteList = Get.find<NoteListController>();
-
-  @override
-  void initState() {
-    super.initState();
-    createExportDirAndImportDir();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +19,7 @@ class _DiaryHomePageState extends State<DiaryHomePage> {
       appBar: AppBar(
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
-        title: Text(widget.title),
+        title: Text(title),
         actions: [
           TopBarActionMenuButton(
               onAddNoteOk: (String noteName) {

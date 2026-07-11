@@ -4,8 +4,10 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:panda_diary/constants/package_name.dart';
+import 'package:panda_diary/db/data_models/folder_data.dart';
 import 'package:panda_diary/db/data_models/old_note_data.dart';
 import 'package:panda_diary/db/db_service.dart';
+import 'package:panda_diary/states/folder_controller.dart';
 import 'package:panda_diary/utils/note_backup_v1.dart';
 import 'package:path/path.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -13,7 +15,6 @@ import 'package:uuid/uuid.dart';
 
 import '../db/data_models/note_data.dart';
 import '../db/db_manager.dart';
-import '../states/app_config_controller.dart';
 import 'note_backup_v2.dart';
 
 void exportNotes(
@@ -21,8 +22,12 @@ void exportNotes(
   Permission.manageExternalStorage.request();
   List<NoteData> data = await _getAllNotesData();
 
-  String content =
-      jsonEncode(NoteBackupV2(createdAt: DateTime.now(), data: data));
+  final folderController = Get.find<FolderController>();
+
+  String content = jsonEncode(NoteBackupV2(
+      createdAt: DateTime.now(),
+      folders: folderController.folders.value,
+      data: data));
 
   _writeTextToPublicDocument(
           fileName: '$packageName.backup.json', content: content)
@@ -67,7 +72,7 @@ Future<void> importNotes(
     Map<String, dynamic> jsonData = jsonDecode(noteBackupContent);
 
     if (jsonData["version"] == 1) {
-      var defaultFolderId = Get.find<AppConfigController>().defaultFolderId;
+      var currentFolderId = Get.find<FolderController>().currentFolderId;
 
       noteDataList = NoteBackupV1.fromJson({
         "version": jsonData["version"],
@@ -79,19 +84,25 @@ Future<void> importNotes(
       })
           .data
           .map<NoteData>(
-              (oldNoteData) => oldNoteData.toNewNoteData(defaultFolderId))
+              (oldNoteData) => oldNoteData.toNewNoteData(currentFolderId))
           .toList();
+
     } else if (jsonData["version"] == 2) {
       noteDataList = NoteBackupV2.fromJson({
         "version": jsonData["version"],
         "createdAt": DateTime.fromMillisecondsSinceEpoch(jsonData['createdAt']),
+        "folders": (jsonData["folders"] as List)
+            .map((folder) => FolderData.fromMap(folder as Map<String, dynamic>))
+            .toList(),
         "data": (jsonData["data"] as List)
             .map((data) => NoteData.fromMap(data as Map<String, dynamic>))
             .toList()
       }).data;
+
     } else {
       return onFall("Format Error!");
     }
+
   } catch (err, stack) {
     return onFall(err.toString() + stack.toString());
   }

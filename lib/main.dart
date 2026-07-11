@@ -3,24 +3,28 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:panda_diary/UI/home_page.dart';
 import 'package:panda_diary/constants/package_name.dart';
-import 'package:panda_diary/states/app_config_controller.dart';
 import 'package:panda_diary/states/folder_controller.dart';
 import 'package:panda_diary/states/note_content_controller.dart';
 import 'package:panda_diary/states/note_list_controller.dart';
+import 'package:panda_diary/utils/file_utils.dart';
 
 import 'db/db_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await GetStorage.init();
+
+  var result = await GetStorage.init();
+  print("初始化结果：$result");
+
   await Get.putAsync<DBService>(() => DBService().init());
 
   Get.put(FolderController());
-  Get.put(AppConfigController());
   Get.put(NoteListController());
   Get.put(NoteContentController());
+  final folderController = Get.find<FolderController>();
+  await folderController.init();
 
-  await initControllers();
+  createExportDirAndImportDir();
 
   runApp(const MyApp());
 }
@@ -38,19 +42,7 @@ class MyApp extends StatelessWidget {
         ),
       ),
       title: appName,
-      home: const DiaryHomePage(title: appName),
+      home: DiaryHomePage(title: appName),
     );
   }
-}
-
-initControllers() async {
-  final folderController = Get.find<FolderController>();
-  await folderController.init();
-  final appConfigController = Get.find<AppConfigController>();
-
-  if (folderController.folders.value.isEmpty) {
-    await folderController.createFolder("Default");
-  }
-  await appConfigController.init();
-  folderController.initCurrentFolder();
 }
