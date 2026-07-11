@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:panda_diary/UI/pages/note_content_edit_page/note_content_edit_page.dart';
 import 'package:panda_diary/UI/widgets/top_bar_action_menu_button.dart';
 import 'package:panda_diary/UI/widgets/note_list.dart';
 import 'package:panda_diary/UI/widgets/side_drawer.dart';
-import 'package:panda_diary/db/data_binders/reactive_note_list.dart';
+import 'package:panda_diary/states/note_list_controller.dart';
 import 'package:panda_diary/utils/file_utils.dart';
 
 class DiaryHomePage extends StatefulWidget {
@@ -16,18 +17,12 @@ class DiaryHomePage extends StatefulWidget {
 }
 
 class _DiaryHomePageState extends State<DiaryHomePage> {
-  late final ReactiveNoteList _noteList;
+  final NoteListController _noteList = Get.find<NoteListController>();
 
   @override
   void initState() {
     super.initState();
-    _noteList = ReactiveNoteList(setState);
     createExportDirAndImportDir();
-  }
-
-  void _updateNoteList() {
-    _noteList.update();
-    setState(() {});
   }
 
   @override
@@ -46,25 +41,18 @@ class _DiaryHomePageState extends State<DiaryHomePage> {
                   _noteList.add("Untitled-${_noteList.lastUntitledIndex + 1}");
                 }
               },
-              updateNoteList: _updateNoteList)
+              updateNoteList: _noteList.updateNoteList)
         ],
       ),
       drawer: const SideDrawer(),
       body: Center(
           child: NoteList(
-              noteList: _noteList,
               onPress: (index) => NoteContentEditPage.navigatorPush(context,
                       id: _noteList.getId(index),
                       title: _noteList.getTitle(index),
                       onContentChange: (String newContent) {
                     _noteList.editElemContent(index, newContent);
-                  }),
-              onDelete: _noteList.removeAt,
-              onReorder: (int oldIndex, int newIndex) async {
-                await _noteList.reorder(oldIndex, newIndex);
-                setState(() {});
-              },
-              onEditTitle: _noteList.editElemTitle)),
+                  }))),
     );
   }
 }

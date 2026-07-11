@@ -9,9 +9,9 @@ class AppConfigController extends GetxController {
   late Rx<AppConfig> _currentAppConfig;
   final _folderController = Get.find<FolderController>();
 
-  get defaultFolderId => _currentAppConfig.value.defaultFolderId;
+  String get defaultFolderId => _currentAppConfig.value.defaultFolderId;
 
-  get recycleBinId => _currentAppConfig.value.recycleBinFolderId;
+  String get recycleBinId => _currentAppConfig.value.recycleBinFolderId;
 
   init() async {
     AppConfig? appConfig = (await _dbManager.query(AppConfig.fromMap))

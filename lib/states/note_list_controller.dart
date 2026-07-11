@@ -1,30 +1,24 @@
 import 'dart:math';
 
 import 'package:get/get.dart';
-import 'package:panda_diary/db/data_models/app_config.dart';
-import 'package:panda_diary/db/data_models/folder_data.dart';
 import 'package:panda_diary/db/data_models/note_data.dart';
 import 'package:panda_diary/db/db_service.dart';
 import 'package:panda_diary/states/app_config_controller.dart';
 
-class ReactiveNoteList {
-  List<NoteData> _value = [];
+class NoteListController extends GetxController {
   final _notesDB = Get.find<DBService>().notesDB;
-  // final _appConfigDB = Get.find<DBService>().appConfigDB;
-  // final _folderDB = Get.find<DBService>().foldersDB;
-  late final Function setState;
-  // late String _defaultFolderId;
+  final RxList _notes = [].obs;
 
-  ReactiveNoteList(this.setState) {
+  NoteListController() {
     _init();
   }
 
   int get lastUntitledIndex {
-    if (_value.isEmpty) {
+    if (_notes.isEmpty) {
       return 0;
     } else {
       var untitledNotes =
-          _value.where((elem) => elem.title.startsWith("Untitled-"));
+          _notes.where((elem) => elem.title.startsWith("Untitled-"));
       if (untitledNotes.isEmpty) {
         return 0;
       } else {
@@ -40,59 +34,51 @@ class ReactiveNoteList {
   }
 
   void _init() async {
-    _value = await _notesDB.query(NoteData.fromMap);
-
-    setState(() {});
+    _notes.value = await _notesDB.query(NoteData.fromMap);
   }
 
-  void update() {
+  void updateNoteList() {
     _init();
   }
 
   add(title) {
-    setState(() {
-      final noteData = NoteData(
-          ord: _value.length,
-          title: title,
-          content: "",
-          folderId: Get.find<AppConfigController>().defaultFolderId);
-      _value.add(noteData);
-      _notesDB.insert(noteData);
-    });
+    final noteData = NoteData(
+        ord: _notes.length,
+        title: title,
+        content: "",
+        folderId: Get.find<AppConfigController>().defaultFolderId);
+    _notes.add(noteData);
+    _notesDB.insert(noteData);
   }
 
   NoteData removeAt(index) {
     late NoteData value;
-    setState(() {
-      _notesDB.delete(_value[index].id);
-      value = _value.removeAt(index);
-    });
+    _notesDB.delete(_notes[index].id);
+    value = _notes.removeAt(index);
     return value;
   }
 
   void editElemTitle(int index, String newTitle) {
-    setState(() {
-      _notesDB.update(NoteData(
-          id: _value[index].id,
-          title: newTitle,
-          content: _value[index].content,
-          ord: _value[index].ord,
-          folderId: Get.find<AppConfigController>().defaultFolderId));
-      _value[index].title = newTitle;
-    });
+    _notesDB.update(NoteData(
+        id: _notes[index].id,
+        title: newTitle,
+        content: _notes[index].content,
+        ord: _notes[index].ord,
+        folderId: Get.find<AppConfigController>().defaultFolderId));
+    _notes[index].title = newTitle;
+    _notes.refresh();
   }
 
   void editElemContent(int index, String newContent) {
-    setState(() {
-      _value[index].content = newContent;
-    });
+    _notes[index].content = newContent;
+    _notes.refresh();
   }
 
   Future<void> reorder(int oldIndex, int newIndex) async {
-    var oldValue = List.from(_value);
+    var oldValue = List.from(_notes);
 
-    NoteData temp = _value.removeAt(oldIndex);
-    _value.insert(newIndex, temp);
+    NoteData temp = _notes.removeAt(oldIndex);
+    _notes.insert(newIndex, temp);
 
     var oldNote = oldValue[oldIndex];
     await _notesDB.update(NoteData.fromMap({
@@ -130,13 +116,13 @@ class ReactiveNoteList {
     }
   }
 
-  List<NoteData> toList() {
-    return _value;
+  RxList toList() {
+    return _notes;
   }
 
   String getId(int index) {
-    return _value[index].id;
+    return _notes[index].id;
   }
 
-  String getTitle(int index) => _value[index].title;
+  String getTitle(int index) => _notes[index].title;
 }
