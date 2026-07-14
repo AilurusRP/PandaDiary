@@ -1,14 +1,17 @@
+import 'dart:math';
+
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:panda_diary/db/data_models/folder_data.dart';
+import 'package:panda_diary/states/note_list_controller.dart';
 
 import '../db/db_service.dart';
 
 class FolderController extends GetxController {
   final _folderDB = Get.find<DBService>().foldersDB;
-  final Rx<List<FolderData>> folders = Rx<List<FolderData>>([]);
-  final Rx<String> _currentFolderId = "".obs;
-  final storage = GetStorage();
+  final RxList<FolderData> folders = RxList<FolderData>([]);
+  final RxString _currentFolderId = "".obs;
+  final _storage = GetStorage();
 
   init() async {
     folders.value = await fetchAll();
@@ -16,14 +19,14 @@ class FolderController extends GetxController {
   }
 
   initCurrentFolder() async {
-    var currentFolderIdInStorage = storage.read("current_folder_id");
+    var currentFolderIdInStorage = _storage.read("current_folder_id");
     if (currentFolderIdInStorage != null) {
       setCurrentFolder(currentFolderIdInStorage);
       return;
     }
 
-    if (folders.value.isNotEmpty) {
-      setCurrentFolder(folders.value[0].id);
+    if (folders.isNotEmpty) {
+      setCurrentFolder(folders[0].id);
     } else {
       setCurrentFolder(await createFolder("Default"));
     }
@@ -31,9 +34,32 @@ class FolderController extends GetxController {
 
   String get currentFolderId => _currentFolderId.value;
 
+  String get currentFolderTitle =>
+      folders.firstWhere((folder) => folder.id == _currentFolderId.value).title;
+
+  int get lastUntitledIndex {
+    if (folders.isEmpty) {
+      return 0;
+    } else {
+      var untitledFolders =
+          folders.where((elem) => elem.title.startsWith("Untitled-"));
+      if (untitledFolders.isEmpty) {
+        return 0;
+      } else {
+        return untitledFolders.map<int>((elem) {
+          try {
+            return int.parse(elem.title.substring(9));
+          } on FormatException {
+            return 0;
+          }
+        }).reduce(max);
+      }
+    }
+  }
+
   setCurrentFolder(String folderId) {
     _currentFolderId.value = folderId;
-    storage.write("current_folder_id", _currentFolderId.value);
+    _storage.write("current_folder_id", _currentFolderId.value);
   }
 
   Future<List<FolderData>> fetchAll() async {
@@ -41,16 +67,39 @@ class FolderController extends GetxController {
   }
 
   Future<String> createFolder(String title) async {
-    var data = FolderData(title: title, ord: folders.value.length);
+    var data = FolderData(title: title, ord: folders.length);
+    folders.add(data);
     await _folderDB.insert(data);
     return data.id;
   }
 
-  Future<void> reorder(int oldIndex, int newIndex) async {
-    var oldValue = List.from(folders.value);
+  FolderData removeAt(index) {
+    if (Get.find<NoteListController>()
+        .getNotesByFolderId(folders[index].id)
+        .isNotEmpty) {
+      throw Exception("Cannot delete folder that is not empty!");
+    }
 
-    FolderData temp = folders.value.removeAt(oldIndex);
-    folders.value.insert(newIndex, temp);
+    if (folders[index].id == _currentFolderId.value) {
+      setCurrentFolder(folders[0].id);
+    }
+
+    _folderDB.delete(folders[index].id);
+    return folders.removeAt(index);
+  }
+
+  void editFolderTitle(int index, String newTitle) {
+    _folderDB.update(FolderData(
+        id: folders[index].id, title: newTitle, ord: folders[index].ord));
+    folders[index].title = newTitle;
+    folders.refresh();
+  }
+
+  Future<void> reorder(int oldIndex, int newIndex) async {
+    var oldValue = List.from(folders);
+
+    FolderData temp = folders.removeAt(oldIndex);
+    folders.insert(newIndex, temp);
 
     var oldFolder = oldValue[oldIndex];
     await _folderDB.update(FolderData.fromMap(

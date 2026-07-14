@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:panda_diary/constants/package_name.dart';
@@ -8,6 +7,7 @@ import 'package:panda_diary/db/data_models/folder_data.dart';
 import 'package:panda_diary/db/data_models/old_note_data.dart';
 import 'package:panda_diary/db/db_service.dart';
 import 'package:panda_diary/states/folder_controller.dart';
+import 'package:panda_diary/states/note_list_controller.dart';
 import 'package:panda_diary/utils/note_backup_v1.dart';
 import 'package:path/path.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -26,7 +26,7 @@ void exportNotes(
 
   String content = jsonEncode(NoteBackupV2(
       createdAt: DateTime.now(),
-      folders: folderController.folders.value,
+      folders: folderController.folders,
       data: data));
 
   _writeTextToPublicDocument(
@@ -63,10 +63,6 @@ Future<void> importNotes(
   final dbManager = Get.find<DBService>().notesDB;
   List<NoteData> notesInDatabase = await dbManager.query(NoteData.fromMap);
 
-  int maxOrd = notesInDatabase.isNotEmpty
-      ? notesInDatabase.map((noteData) => noteData.ord).reduce(max)
-      : 0;
-
   List<NoteData> noteDataList;
   try {
     Map<String, dynamic> jsonData = jsonDecode(noteBackupContent);
@@ -86,7 +82,6 @@ Future<void> importNotes(
           .map<NoteData>(
               (oldNoteData) => oldNoteData.toNewNoteData(currentFolderId))
           .toList();
-
     } else if (jsonData["version"] == 2) {
       noteDataList = NoteBackupV2.fromJson({
         "version": jsonData["version"],
@@ -98,20 +93,22 @@ Future<void> importNotes(
             .map((data) => NoteData.fromMap(data as Map<String, dynamic>))
             .toList()
       }).data;
-
     } else {
       return onFall("Format Error!");
     }
-
   } catch (err, stack) {
     return onFall(err.toString() + stack.toString());
   }
 
   int importedNotesCount = 0;
+  Map<String, int> lengthsOfFolders = getLengthsOfFolders();
   for (int i = 0; i < noteDataList.length; i++) {
     try {
       var imported = await _importNote(
-          noteDataList[i], i + maxOrd, dbManager, notesInDatabase);
+          noteDataList[i],
+          (lengthsOfFolders[noteDataList[i].folderId] ?? 0) + i,
+          dbManager,
+          notesInDatabase);
       if (imported) importedNotesCount++;
     } catch (err) {
       onFall(err);
@@ -184,4 +181,15 @@ Future<void> _writeTextToPublicDocument({
   final File file = File('${exportDir.path}/$fileName');
 
   await file.writeAsString(content, flush: true);
+}
+
+Map<String, int> getLengthsOfFolders() {
+  final folderController = Get.find<FolderController>();
+  final noteListController = Get.find<NoteListController>();
+  Map<String, int> lengthsOfFolders = {};
+  folderController.folders.forEach((folder) {
+    lengthsOfFolders[folder.id] =
+        noteListController.getNotesByFolderId(folder.id).length;
+  });
+  return lengthsOfFolders;
 }

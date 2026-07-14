@@ -1,17 +1,18 @@
 import "package:flutter/material.dart";
-import 'package:panda_diary/UI/widgets/show_add_note_dialog.dart';
+import 'package:get/get.dart';
+import 'package:panda_diary/UI/widgets/dialogs/show_add_folder_dialog.dart';
+import 'package:panda_diary/UI/widgets/dialogs/show_add_note_dialog.dart';
+import 'package:panda_diary/states/note_list_controller.dart';
 import 'package:panda_diary/utils/file_utils.dart';
 
 import 'action_menu_item.dart';
 
 class TopBarActionMenuButton extends StatelessWidget {
-  const TopBarActionMenuButton(
-      {Key? key, required this.onAddNoteOk, required this.updateNoteList})
-      : super(key: key);
+  TopBarActionMenuButton({
+    Key? key,
+  }) : super(key: key);
 
-  final Function onAddNoteOk;
-
-  final void Function() updateNoteList;
+  final _noteListController = Get.find<NoteListController>();
 
   @override
   Widget build(BuildContext context) {
@@ -24,14 +25,17 @@ class TopBarActionMenuButton extends StatelessWidget {
                     text: "New Note",
                     onPressed: () {
                       Navigator.pop(context);
-                      showAddNoteDialog(context, onOk: onAddNoteOk);
+                      showAddNoteDialog(context);
                     },
                   )),
               PopupMenuItem(
                   padding: const EdgeInsets.all(0),
                   child: ActionMenuItem(
                     text: "New Folder",
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.pop(context);
+                      showAddFolderDialog(context);
+                    },
                   )),
               PopupMenuItem(
                   padding: const EdgeInsets.all(0),
@@ -81,7 +85,7 @@ class TopBarActionMenuButton extends StatelessWidget {
                           ),
                         );
                       });
-                      updateNoteList();
+                      _noteListController.updateNoteLists();
                     },
                   )),
             ]);

@@ -1,7 +1,10 @@
 import "package:flutter/material.dart";
+import "package:get/get.dart";
+import "package:panda_diary/states/note_list_controller.dart";
 
-Future<void> showDeleteNoteDialog(context,
-    {required Function onOk, onCancel}) async {
+Future<void> showDeleteNoteDialog(context, String noteId, {onCancel}) async {
+  final noteListController = Get.find<NoteListController>();
+
   return showDialog(
       context: context,
       builder: (context) {
@@ -11,7 +14,7 @@ Future<void> showDeleteNoteDialog(context,
           actions: [
             TextButton(
                 onPressed: () {
-                  onOk();
+                  noteListController.removeAt(noteId);
                   Navigator.of(context).pop();
                 },
                 child: const Text("Ok")),

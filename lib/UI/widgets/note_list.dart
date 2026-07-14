@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:panda_diary/UI/widgets/show_delete_note_dialog.dart';
-import 'package:panda_diary/UI/widgets/show_edit_title_dialog.dart';
+import 'package:panda_diary/UI/widgets/dialogs/show_edit_note_title_dialog.dart';
+import 'package:panda_diary/db/data_models/note_data.dart';
 import 'package:panda_diary/states/folder_controller.dart';
 import 'package:panda_diary/states/note_list_controller.dart';
 import 'action_menu_item.dart';
+import 'dialogs/show_delete_note_dialog.dart';
+import 'dialogs/show_move_to_another_folder_dialog.dart';
 import 'marquee_text.dart';
 
 class NoteList extends StatelessWidget {
@@ -12,53 +14,39 @@ class NoteList extends StatelessWidget {
 
   final Function onPress;
 
-  final _folders = Get.find<FolderController>();
-  final _noteList = Get.find<NoteListController>();
+  final _folderController = Get.find<FolderController>();
+  final _noteListController = Get.find<NoteListController>();
 
   @override
   Widget build(BuildContext context) {
     return Obx(() => ReorderableListView(
-          children: _noteList
+          onReorder: _noteListController.reorder,
+          children: _noteListController.currentFolderNotes
+              .where(
+                  (note) => note.folderId == _folderController.currentFolderId)
               .toList()
-              .where((note) => note.folderId == _folders.currentFolderId)
-              .toList()
-              .asMap()
-              .entries
-              .map<Widget>((entry) {
+              .map<Widget>((note) {
             return NoteListItem(
-                key: Key(entry.value.id),
-                text: entry.value.title,
-                index: entry.key,
-                onPress: onPress);
+              key: Key(note.id),
+              onPress: onPress,
+              note: note,
+            );
           }).toList(),
-          onReorder: (int oldIndex, int newIndex) {
-            if (oldIndex < newIndex) {
-              newIndex -= 1;
-            }
-            _noteList.reorder(oldIndex, newIndex);
-          },
         ));
   }
 }
 
 class NoteListItem extends StatelessWidget {
-  NoteListItem(
-      {Key? key,
-      required this.text,
-      required this.index,
-      required this.onPress})
+  const NoteListItem({Key? key, required this.note, required this.onPress})
       : super(key: key);
 
-  final String text;
-  final int index;
+  final NoteData note;
   final Function onPress;
-
-  final _noteList = Get.find<NoteListController>();
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-        onTap: () => onPress(index),
+        onTap: () => onPress(note),
         child: Container(
           height: 50,
           padding: const EdgeInsets.fromLTRB(20, 0, 0, 0),
@@ -71,7 +59,7 @@ class NoteListItem extends StatelessWidget {
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: MarqueeText(
-                    text: text,
+                    text: note.title,
                     fontSize: 18,
                     blankSpace: 15,
                     maxWidth: 280,
@@ -86,8 +74,7 @@ class NoteListItem extends StatelessWidget {
                           text: 'Delete Note',
                           onPressed: () {
                             Navigator.pop(context);
-                            showDeleteNoteDialog(context,
-                                onOk: () => _noteList.removeAt(index));
+                            showDeleteNoteDialog(context, note.id);
                           },
                         )),
                         PopupMenuItem(
@@ -95,10 +82,15 @@ class NoteListItem extends StatelessWidget {
                           text: 'Edit Title',
                           onPressed: () {
                             Navigator.pop(context);
-                            showEditTitleDialog(context,
-                                onOk: (String newTitle) {
-                              _noteList.editElemTitle(index, newTitle);
-                            });
+                            showEditNoteTitleDialog(context, note);
+                          },
+                        )),
+                        PopupMenuItem(
+                            child: ActionMenuItem(
+                          text: 'Move to..',
+                          onPressed: () {
+                            Navigator.pop(context);
+                            showMoveToAnotherFolderDialog(context, note);
                           },
                         ))
                       ])

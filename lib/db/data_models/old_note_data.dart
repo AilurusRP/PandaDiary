@@ -37,7 +37,12 @@ class OldNoteData implements CommonDataModel {
 
   NoteData toNewNoteData(String defaultFolderId) {
     return NoteData(
-        title: title, content: content, folderId: defaultFolderId, ord: ord);
+      id: id,
+      title: title,
+      content: content,
+      folderId: defaultFolderId,
+      ord: ord,
+    );
   }
 
   @override

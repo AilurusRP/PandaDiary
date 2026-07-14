@@ -1,8 +1,12 @@
 import "package:flutter/material.dart";
+import "package:get/get.dart";
+import "package:panda_diary/states/note_list_controller.dart";
 
-Future<void> showEditTitleDialog(context,
-    {required Function onOk, onCancel}) async {
+import "../../../db/data_models/note_data.dart";
+
+Future<void> showEditNoteTitleDialog(context, NoteData note, {onCancel}) async {
   final noteTitleTextController = TextEditingController();
+  final noteListController = Get.find<NoteListController>();
 
   return showDialog(
       context: context,
@@ -28,7 +32,8 @@ Future<void> showEditTitleDialog(context,
           actions: [
             TextButton(
                 onPressed: () {
-                  onOk(noteTitleTextController.text);
+                  noteListController.editNoteTitle(
+                      note, noteTitleTextController.text);
                   Navigator.of(context).pop();
                 },
                 child: const Text("Ok")),

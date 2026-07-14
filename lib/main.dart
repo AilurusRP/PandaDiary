@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
@@ -11,22 +12,28 @@ import 'package:panda_diary/utils/file_utils.dart';
 import 'db/db_service.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  try {
+    WidgetsFlutterBinding.ensureInitialized();
 
-  var result = await GetStorage.init();
-  print("初始化结果：$result");
+    await GetStorage.init();
 
-  await Get.putAsync<DBService>(() => DBService().init());
+    await Get.putAsync<DBService>(() => DBService().init());
 
-  Get.put(FolderController());
-  Get.put(NoteListController());
-  Get.put(NoteContentController());
-  final folderController = Get.find<FolderController>();
-  await folderController.init();
+    Get.put(NoteListController());
+    Get.put(FolderController());
+    Get.put(NoteContentController());
+    final folderController = Get.find<FolderController>();
+    await folderController.init();
 
-  createExportDirAndImportDir();
+    createExportDirAndImportDir();
 
-  runApp(const MyApp());
+    runApp(const MyApp());
+
+  } catch (e, s) {
+    if (kDebugMode) {
+      print("Exception found: $e\n$s");
+    }
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -42,7 +49,7 @@ class MyApp extends StatelessWidget {
         ),
       ),
       title: appName,
-      home: DiaryHomePage(title: appName),
+      home: DiaryHomePage(),
     );
   }
 }

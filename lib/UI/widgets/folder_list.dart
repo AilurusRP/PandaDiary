@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:panda_diary/states/folder_controller.dart';
 
+import 'action_menu_item.dart';
+import 'dialogs/show_delete_folder_dialog.dart';
+import 'dialogs/show_edit_folder_title_dialog.dart';
 import 'marquee_text.dart';
 
 class FolderList extends StatelessWidget {
@@ -18,7 +21,7 @@ class FolderList extends StatelessWidget {
             }
             _folderController.reorder(oldIndex, newIndex);
           },
-          children: _folderController.folders.value
+          children: _folderController.folders
               .asMap()
               .entries
               .map((entry) => FolderListItem(
@@ -45,32 +48,55 @@ class FolderListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-        onTap: () => _folderController
-            .setCurrentFolder(_folderController.folders.value[index].id),
-        child: Container(
-          height: 50,
-          padding: const EdgeInsets.fromLTRB(20, 0, 0, 0),
-          decoration: const BoxDecoration(
-            border: Border(bottom: BorderSide(width: 0.2, color: Colors.grey)),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: MarqueeText(
-                    text: title,
-                    fontSize: 18,
-                    blankSpace: 15,
-                    maxWidth: 280,
+        onTap: () {
+          _folderController
+              .setCurrentFolder(_folderController.folders[index].id);
+          Navigator.of(context).pop();
+        },
+        child: Obx(() => Container(
+              height: 50,
+              padding: const EdgeInsets.fromLTRB(20, 0, 0, 0),
+              decoration: BoxDecoration(
+                  border: const Border(
+                      bottom: BorderSide(width: 0.2, color: Colors.grey)),
+                  color: id == _folderController.currentFolderId
+                      ? Colors.white30
+                      : Colors.grey[200]),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: MarqueeText(
+                        text: title,
+                        fontSize: 18,
+                        blankSpace: 15,
+                        maxWidth: 280,
+                      ),
+                    ),
                   ),
-                ),
+                  PopupMenuButton(
+                      icon: const Icon(Icons.more_horiz, color: Colors.black38),
+                      itemBuilder: (context) => [
+                            PopupMenuItem(
+                                child: ActionMenuItem(
+                              text: 'Delete Folder',
+                              onPressed: () {
+                                Navigator.pop(context);
+                                showDeleteFolderDialog(context, index);
+                              },
+                            )),
+                            PopupMenuItem(
+                                child: ActionMenuItem(
+                              text: 'Edit Title',
+                              onPressed: () {
+                                Navigator.pop(context);
+                                showEditFolderTitleDialog(context, index);
+                              },
+                            ))
+                          ])
+                ],
               ),
-              PopupMenuButton(
-                  icon: const Icon(Icons.more_horiz, color: Colors.black38),
-                  itemBuilder: (context) => [])
-            ],
-          ),
-        ));
+            )));
   }
 }

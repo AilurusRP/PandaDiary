@@ -7,19 +7,29 @@ import 'package:panda_diary/states/folder_controller.dart';
 
 class NoteListController extends GetxController {
   final _notesDB = Get.find<DBService>().notesDB;
-  final RxList _notes = [].obs;
-  final _folderController = Get.find<FolderController>();
+  final Map<String, RxList<NoteData>> _noteLists = <String, RxList<NoteData>>{};
 
   NoteListController() {
     _init();
   }
 
+  RxList<NoteData> get currentFolderNotes {
+    final notes = _noteLists[Get.find<FolderController>().currentFolderId];
+    if (notes == null) {
+      _noteLists[Get.find<FolderController>().currentFolderId] =
+          <NoteData>[].obs;
+      return _noteLists[Get.find<FolderController>().currentFolderId]!;
+    } else {
+      return notes;
+    }
+  }
+
   int get lastUntitledIndex {
-    if (_notes.isEmpty) {
+    if (_noteLists.isEmpty) {
       return 0;
     } else {
-      var untitledNotes =
-          _notes.where((elem) => elem.title.startsWith("Untitled-"));
+      var untitledNotes = currentFolderNotes
+          .where((elem) => elem.title.startsWith("Untitled-"));
       if (untitledNotes.isEmpty) {
         return 0;
       } else {
@@ -35,53 +45,84 @@ class NoteListController extends GetxController {
   }
 
   void _init() async {
-    _notes.value = await _notesDB.query(NoteData.fromMap);
+    final allNotes = await _notesDB.query(NoteData.fromMap);
+    allNotes.forEach((note) {
+      if (_noteLists[note.folderId] != null) {
+        _noteLists[note.folderId]!.add(note);
+      } else {
+        _noteLists[note.folderId] = <NoteData>[note].obs;
+      }
+    });
+    _noteLists.entries.forEach(
+        (noteListEntry) => noteListEntry.value.sort((a, b) => a.ord - b.ord));
   }
 
-  void updateNoteList() {
+  void updateNoteLists() {
+    _noteLists.forEach((folderId, noteList) {
+      noteList.clear();
+    });
     _init();
   }
 
   add(title) {
     final noteData = NoteData(
-        ord: _notes.length,
+        ord: currentFolderNotes.length,
         title: title,
         content: "",
-        folderId: _folderController.currentFolderId);
-    _notes.add(noteData);
+        folderId: Get.find<FolderController>().currentFolderId,
+        id: NoteData.uuid());
+    currentFolderNotes.add(noteData);
     _notesDB.insert(noteData);
   }
 
-  NoteData removeAt(index) {
+  NoteData removeAt(String noteId) {
     late NoteData value;
-    _notesDB.delete(_notes[index].id);
-    value = _notes.removeAt(index);
+    _notesDB.delete(noteId);
+    value = currentFolderNotes.removeAt(getIndexFromId(noteId));
     return value;
   }
 
-  void editElemTitle(int index, String newTitle) {
+  void editNoteTitle(NoteData note, String newTitle) {
     _notesDB.update(NoteData(
-        id: _notes[index].id,
+        id: note.id,
         title: newTitle,
-        content: _notes[index].content,
-        ord: _notes[index].ord,
-        folderId: _folderController.currentFolderId));
-    _notes[index].title = newTitle;
-    _notes.refresh();
+        content: note.content,
+        ord: note.ord,
+        folderId: Get.find<FolderController>().currentFolderId));
+    currentFolderNotes[getIndexFromId(note.id)].title = newTitle;
+    currentFolderNotes.refresh();
   }
 
-  void editElemContent(int index, String newContent) {
-    _notes[index].content = newContent;
-    _notes.refresh();
+  void editNoteContent(String noteId, String newContent) {
+    currentFolderNotes[getIndexFromId(noteId)].content = newContent;
+    currentFolderNotes.refresh();
+  }
+
+  void moveNoteToAnotherFolder(NoteData note, String newFolderId) async {
+    final newFolderLength = getNotesByFolderId(newFolderId).length;
+    final updatedNote = NoteData(
+        id: note.id,
+        title: note.title,
+        content: note.content,
+        folderId: newFolderId,
+        ord: newFolderLength);
+    await _notesDB.update(updatedNote);
+    currentFolderNotes.removeAt(currentFolderNotes.indexOf(note));
+    _noteLists[newFolderId]!.insert(newFolderLength, updatedNote);
   }
 
   Future<void> reorder(int oldIndex, int newIndex) async {
-    var oldValue = List.from(_notes);
+    if (oldIndex < newIndex) {
+      newIndex -= 1;
+    }
 
-    NoteData temp = _notes.removeAt(oldIndex);
-    _notes.insert(newIndex, temp);
+    final oldCurrentFolderNotes = List.from(currentFolderNotes);
 
-    var oldNote = oldValue[oldIndex];
+    NoteData temp = currentFolderNotes
+        .removeAt(currentFolderNotes.indexOf(oldCurrentFolderNotes[oldIndex]));
+    currentFolderNotes.insert(newIndex, temp);
+
+    final oldNote = oldCurrentFolderNotes[oldIndex];
     await _notesDB.update(NoteData.fromMap({
       "id": oldNote.id,
       "title": oldNote.title,
@@ -89,10 +130,11 @@ class NoteListController extends GetxController {
       "folder_id": oldNote.folderId,
       "ord": newIndex
     }));
+    currentFolderNotes[getIndexFromId(oldNote.id)].ord = newIndex;
 
     if (newIndex > oldIndex) {
       for (int i = oldIndex + 1; i <= newIndex; i++) {
-        var oldNote = oldValue[i];
+        final oldNote = oldCurrentFolderNotes[i];
         await _notesDB.update(NoteData.fromMap({
           "id": oldNote.id,
           "title": oldNote.title,
@@ -105,7 +147,7 @@ class NoteListController extends GetxController {
 
     if (newIndex < oldIndex) {
       for (int i = newIndex; i < oldIndex; i++) {
-        var oldNote = oldValue[i];
+        final oldNote = oldCurrentFolderNotes[i];
         await _notesDB.update(NoteData.fromMap({
           "id": oldNote.id,
           "title": oldNote.title,
@@ -117,13 +159,24 @@ class NoteListController extends GetxController {
     }
   }
 
-  RxList toList() {
-    return _notes;
+  int getIndexFromId(String noteId) {
+    return currentFolderNotes.indexWhere((note) => note.id == noteId);
   }
 
-  String getId(int index) {
-    return _notes[index].id;
+  RxList<NoteData> getNotesByFolderId(String folderId) {
+    var notes = _noteLists[folderId];
+    if (notes == null) {
+      if (Get.find<FolderController>()
+          .folders
+          .where((folder) => folder.id == folderId)
+          .isNotEmpty) {
+        _noteLists[folderId] = <NoteData>[].obs;
+        notes = _noteLists[folderId];
+      } else {
+        throw Exception(
+            "getNotesByFolderId failed as _noteLists[folderId] is null.");
+      }
+    }
+    return notes!;
   }
-
-  String getTitle(int index) => _notes[index].title;
 }

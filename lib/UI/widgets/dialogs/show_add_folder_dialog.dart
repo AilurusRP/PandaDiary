@@ -1,24 +1,26 @@
 import "package:flutter/material.dart";
+import "package:get/get.dart";
 
-Future<void> showAddNoteDialog(context,
-    {required Function onOk, onCancel}) async {
-  final noteTitleTextController = TextEditingController();
+import "../../../states/folder_controller.dart";
+
+Future<void> showAddFolderDialog(context, {onCancel}) async {
+  final folderTitleTextController = TextEditingController();
 
   return showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text("Add Note"),
+          title: const Text("Add Folder"),
           content: SingleChildScrollView(
             child: ListBody(
               children: [
                 Row(
                   children: [
-                    const Text("Note Title: "),
+                    const Text("Folder Title: "),
                     SizedBox(
                         width: 120,
                         child: TextField(
-                          controller: noteTitleTextController,
+                          controller: folderTitleTextController,
                         ))
                   ],
                 )
@@ -28,7 +30,15 @@ Future<void> showAddNoteDialog(context,
           actions: [
             TextButton(
                 onPressed: () {
-                  onOk(noteTitleTextController.text);
+                  final folderController = Get.find<FolderController>();
+                  if (folderTitleTextController.text != "") {
+                    folderController
+                        .createFolder(folderTitleTextController.text);
+                  } else {
+                    folderController.createFolder(
+                        "Untitled-${folderController.lastUntitledIndex + 1}");
+                  }
+
                   Navigator.of(context).pop();
                 },
                 child: const Text("Ok")),

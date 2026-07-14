@@ -42,7 +42,6 @@ class _NoteContentEditPageState extends State<NoteContentEditPage> {
       _controller.text = noteContentController.currentContent;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
-        setState(() {});
       });
     });
     super.initState();
@@ -78,7 +77,6 @@ class _NoteContentEditPageState extends State<NoteContentEditPage> {
                       _controller.text = noteContentController.currentContent;
                       widget.onContentChange(
                           noteContentController.currentContent);
-                      setState(() {});
                     }
                   },
                   icon: Icon(Icons.undo,
@@ -95,7 +93,6 @@ class _NoteContentEditPageState extends State<NoteContentEditPage> {
                       _controller.text = noteContentController.currentContent;
                       widget.onContentChange(
                           noteContentController.currentContent);
-                      setState(() {});
                     }
                   },
                   icon: Icon(Icons.redo,
@@ -122,7 +119,6 @@ class _NoteContentEditPageState extends State<NoteContentEditPage> {
               onChanged: (text) {
                 widget.onContentChange(text);
                 Get.find<NoteContentController>().editContent(text);
-                setState(() {});
               },
             )));
   }

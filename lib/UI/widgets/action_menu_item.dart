@@ -11,7 +11,7 @@ class ActionMenuItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return TextButton(
         style: ButtonStyle(
-            overlayColor: MaterialStateProperty.all(Colors.grey[200])),
+            overlayColor: WidgetStateProperty.all(Colors.grey[200])),
         onPressed: onPressed,
         child: Center(
             child: Text(

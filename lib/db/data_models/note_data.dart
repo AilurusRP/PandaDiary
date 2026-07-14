@@ -1,24 +1,19 @@
 import 'package:panda_diary/db/data_models/common_data_model.dart';
 import 'package:uuid/uuid.dart';
 
-var uuid = const Uuid().v4;
-
 class NoteData implements CommonDataModel {
-  NoteData(
-      {required this.title,
-      required this.content,
-      required this.folderId,
-      required this.ord,
-      id}) {
-    if (id == null) {
-      this.id = uuid();
-    } else {
-      this.id = id;
-    }
-  }
+  NoteData({
+    required this.id,
+    required this.title,
+    required this.content,
+    required this.folderId,
+    required this.ord,
+  });
+
+  static uuid() => const Uuid().v4();
 
   @override
-  late final String id;
+  final String id;
 
   String title;
   String content;
