@@ -24,6 +24,14 @@ class NoteListController extends GetxController {
     }
   }
 
+  List<NoteData> get allNotes {
+    List<NoteData> notes = [];
+    _noteLists.forEach((_, noteList) {
+      notes += noteList;
+    });
+    return notes;
+  }
+
   int get lastUntitledIndex {
     if (_noteLists.isEmpty) {
       return 0;
@@ -45,7 +53,7 @@ class NoteListController extends GetxController {
   }
 
   void _init() async {
-    final allNotes = await _notesDB.query(NoteData.fromMap);
+    final allNotes = await _fetchAllNotes();
     allNotes.forEach((note) {
       if (_noteLists[note.folderId] != null) {
         _noteLists[note.folderId]!.add(note);
@@ -55,6 +63,10 @@ class NoteListController extends GetxController {
     });
     _noteLists.entries.forEach(
         (noteListEntry) => noteListEntry.value.sort((a, b) => a.ord - b.ord));
+  }
+
+  Future<List<NoteData>> _fetchAllNotes() async {
+    return await _notesDB.query(NoteData.fromMap);
   }
 
   void updateNoteLists() {
@@ -178,5 +190,9 @@ class NoteListController extends GetxController {
       }
     }
     return notes!;
+  }
+
+  importNote(NoteData note) async {
+    await _notesDB.insert(note);
   }
 }

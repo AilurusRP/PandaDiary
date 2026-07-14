@@ -6,13 +6,9 @@ import 'package:uuid/uuid.dart';
 var uuid = const Uuid().v4;
 
 class FolderData implements CommonDataModel {
-  FolderData({required this.title, required this.ord, id}) {
-    if (id == null) {
-      this.id = uuid();
-    } else {
-      this.id = id;
-    }
-  }
+  FolderData({required this.title, required this.ord, required this.id});
+
+  static uuid() => const Uuid().v4();
 
   @override
   late final String id;

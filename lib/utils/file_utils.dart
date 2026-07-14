@@ -4,18 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:panda_diary/constants/package_name.dart';
 import 'package:panda_diary/db/data_models/folder_data.dart';
-import 'package:panda_diary/db/data_models/old_note_data.dart';
 import 'package:panda_diary/db/db_service.dart';
 import 'package:panda_diary/states/folder_controller.dart';
 import 'package:panda_diary/states/note_list_controller.dart';
-import 'package:panda_diary/utils/note_backup_v1.dart';
+import 'package:panda_diary/utils/backup_data.dart';
 import 'package:path/path.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:uuid/uuid.dart';
 
 import '../db/data_models/note_data.dart';
-import '../db/db_manager.dart';
-import 'note_backup_v2.dart';
 
 void exportNotes(
     {required Function(Object?) onFall, required Function() onOk}) async {
@@ -24,7 +20,7 @@ void exportNotes(
 
   final folderController = Get.find<FolderController>();
 
-  String content = jsonEncode(NoteBackupV2(
+  String content = jsonEncode(BackupDataV2(
       createdAt: DateTime.now(),
       folders: folderController.folders,
       data: data));
@@ -39,9 +35,12 @@ void exportNotes(
   });
 }
 
-Future<void> importNotes(
+Future<void> importNotesAndFolders(
     {required Function(Object?) onFall,
-    required Function(int) onOk,
+    required Function(
+            {required int importedFoldersCount,
+            required int importedNotesCount})
+        onOk,
     required Function() onNotFound}) async {
   Permission.manageExternalStorage.request();
   final Directory dir = Directory("/storage/emulated/0/$packageName");
@@ -57,42 +56,34 @@ Future<void> importNotes(
     onNotFound();
     return;
   }
-  String noteBackupContent =
+  String backupDataString =
       await (noteFiles.toList()[0] as File).readAsString();
+  Map<String, dynamic> backupDataMap = jsonDecode(backupDataString);
 
-  final dbManager = Get.find<DBService>().notesDB;
-  List<NoteData> notesInDatabase = await dbManager.query(NoteData.fromMap);
-
-  List<NoteData> noteDataList;
+  BackupData backupData;
   try {
-    Map<String, dynamic> jsonData = jsonDecode(noteBackupContent);
-
-    if (jsonData["version"] == 1) {
-      var currentFolderId = Get.find<FolderController>().currentFolderId;
-
-      noteDataList = NoteBackupV1.fromJson({
-        "version": jsonData["version"],
-        "createdAt": DateTime.fromMillisecondsSinceEpoch(jsonData['createdAt']),
-        "data": (jsonData["data"] as List)
+    if (backupDataMap["version"] == 1) {
+      backupData = BackupDataV1.fromJson({
+        "version": backupDataMap["version"],
+        "createdAt":
+            DateTime.fromMillisecondsSinceEpoch(backupDataMap['createdAt']),
+        "data": (backupDataMap["data"] as List)
             .map<OldNoteData>(
-                (data) => OldNoteData.fromMap(data as Map<String, dynamic>))
+                (note) => OldNoteData.fromMap(note as Map<String, dynamic>))
             .toList()
-      })
-          .data
-          .map<NoteData>(
-              (oldNoteData) => oldNoteData.toNewNoteData(currentFolderId))
-          .toList();
-    } else if (jsonData["version"] == 2) {
-      noteDataList = NoteBackupV2.fromJson({
-        "version": jsonData["version"],
-        "createdAt": DateTime.fromMillisecondsSinceEpoch(jsonData['createdAt']),
-        "folders": (jsonData["folders"] as List)
+      });
+    } else if (backupDataMap["version"] == 2) {
+      backupData = BackupDataV2.fromJson({
+        "version": backupDataMap["version"],
+        "createdAt":
+            DateTime.fromMillisecondsSinceEpoch(backupDataMap['createdAt']),
+        "folders": (backupDataMap["folders"] as List)
             .map((folder) => FolderData.fromMap(folder as Map<String, dynamic>))
             .toList(),
-        "data": (jsonData["data"] as List)
-            .map((data) => NoteData.fromMap(data as Map<String, dynamic>))
+        "data": (backupDataMap["data"] as List)
+            .map((note) => NoteData.fromMap(note as Map<String, dynamic>))
             .toList()
-      }).data;
+      });
     } else {
       return onFall("Format Error!");
     }
@@ -100,25 +91,103 @@ Future<void> importNotes(
     return onFall(err.toString() + stack.toString());
   }
 
+  int importedFoldersCount = 0;
+  if (backupData.version == 2) {
+    importedFoldersCount = await _importFolders(
+        backupData: backupData as BackupDataV2, onFall: onFall);
+  }
+  int importedNotesCount =
+      await _importNotes(backupData: backupData, onFall: onFall);
+
+  onOk(
+      importedFoldersCount: importedFoldersCount,
+      importedNotesCount: importedNotesCount);
+}
+
+Future<int> _importFolders(
+    {required BackupDataV2 backupData,
+    required Function(Object?) onFall}) async {
+  final folderController = Get.find<FolderController>();
+
+  List<FolderData> folderDataList = backupData.folders;
+
+  int importedFolderCount = 0;
+  final existedFolderCount = folderController.folders.length;
+  await Future.forEach(folderDataList, (folder) async {
+    try {
+      bool imported = await _importFolder(
+          folderDataBackup: folder,
+          ord: existedFolderCount + importedFolderCount,
+          existFolders: folderController.folders);
+      if (imported) importedFolderCount++;
+    } catch (err, stack) {
+      onFall(err.toString() + stack.toString());
+    }
+  });
+  return importedFolderCount;
+}
+
+Future<int> _importNotes(
+    {required BackupData backupData, required Function(Object?) onFall}) async {
+  final noteListController = Get.find<NoteListController>();
+  List<NoteData> notesInDatabase = noteListController.allNotes;
+
+  List<NoteDataOrOldNoteData> noteDataList;
+  if (backupData.version == 1) {
+    var currentFolderId = Get.find<FolderController>().currentFolderId;
+    noteDataList = (backupData as BackupDataV1)
+        .data
+        .map<NoteData>(
+            (oldNoteData) => oldNoteData.toNewNoteData(currentFolderId))
+        .toList();
+  } else if (backupData.version == 2) {
+    noteDataList = (backupData as BackupDataV2).data;
+  } else {
+    return onFall("Format Error!");
+  }
+
   int importedNotesCount = 0;
   Map<String, int> lengthsOfFolders = getLengthsOfFolders();
   for (int i = 0; i < noteDataList.length; i++) {
     try {
-      var imported = await _importNote(
-          noteDataList[i],
-          (lengthsOfFolders[noteDataList[i].folderId] ?? 0) + i,
-          dbManager,
+      bool imported = await _importNote(
+          noteDataList[i] as NoteData,
+          (lengthsOfFolders[(noteDataList[i] as NoteData).folderId] ?? 0) +
+              importedNotesCount,
           notesInDatabase);
       if (imported) importedNotesCount++;
-    } catch (err) {
-      onFall(err);
+    } catch (err, stack) {
+      onFall(err.toString() + stack.toString());
     }
   }
-  onOk(importedNotesCount);
+  return (importedNotesCount);
 }
 
-Future<bool> _importNote(NoteData noteDataBackup, int ord,
-    DBManager<NoteData> dbManager, List<NoteData> notesInDatabase) async {
+Future<bool> _importFolder(
+    {required FolderData folderDataBackup,
+    required int ord,
+    required List<FolderData> existFolders}) async {
+  List<FolderData> duplicatedFolders =
+      existFolders.where((folder) => folder.id == folderDataBackup.id).toList();
+  if (duplicatedFolders.length > 1) {
+    throw Exception(
+        "There have been more than 1 duplicated folders in the database!");
+  }
+
+  if (duplicatedFolders.isNotEmpty) {
+    return false;
+  }
+
+  final folderData = FolderData(
+      title: folderDataBackup.title, ord: ord, id: folderDataBackup.id);
+
+  await Get.find<FolderController>().importFolder(folderData);
+
+  return true;
+}
+
+Future<bool> _importNote(
+    NoteData noteDataBackup, int ord, List<NoteData> notesInDatabase) async {
   String id = noteDataBackup.id;
   String title = noteDataBackup.title;
   String content = noteDataBackup.content;
@@ -126,7 +195,10 @@ Future<bool> _importNote(NoteData noteDataBackup, int ord,
 
   List<NoteData> duplicatedNotes =
       notesInDatabase.where((noteData) => noteData.id == id).toList();
-  assert(duplicatedNotes.length <= 1);
+  if (duplicatedNotes.length > 1) {
+    throw Exception(
+        "There have been more than 1 duplicated notes in the database!");
+  }
 
   if (duplicatedNotes.isNotEmpty) {
     if (duplicatedNotes[0].content == content) return false;
@@ -134,14 +206,14 @@ Future<bool> _importNote(NoteData noteDataBackup, int ord,
         noteData.title == "$title(1)" && noteData.content == content)) {
       return false;
     }
-    id = const Uuid().v4();
+    id = NoteData.uuid();
     if (duplicatedNotes[0].title == title) title = "$title(1)";
   }
 
   final noteData = NoteData(
       id: id, title: title, content: content, ord: ord, folderId: folderId);
 
-  dbManager.insert(noteData);
+  await Get.find<NoteListController>().importNote(noteData);
 
   return true;
 }

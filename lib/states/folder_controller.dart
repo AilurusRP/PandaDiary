@@ -15,10 +15,14 @@ class FolderController extends GetxController {
 
   init() async {
     folders.value = await fetchAll();
-    initCurrentFolder();
+    _initCurrentFolder();
   }
 
-  initCurrentFolder() async {
+  updateFolders() async {
+    await init();
+  }
+
+  _initCurrentFolder() async {
     var currentFolderIdInStorage = _storage.read("current_folder_id");
     if (currentFolderIdInStorage != null) {
       setCurrentFolder(currentFolderIdInStorage);
@@ -67,7 +71,8 @@ class FolderController extends GetxController {
   }
 
   Future<String> createFolder(String title) async {
-    var data = FolderData(title: title, ord: folders.length);
+    var data =
+        FolderData(title: title, ord: folders.length, id: FolderData.uuid());
     folders.add(data);
     await _folderDB.insert(data);
     return data.id;
@@ -122,5 +127,9 @@ class FolderController extends GetxController {
     }
 
     folders.refresh();
+  }
+
+  importFolder(FolderData folder) async {
+    await _folderDB.insert(folder);
   }
 }
