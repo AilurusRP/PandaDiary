@@ -20,6 +20,7 @@ class NoteListController extends GetxController {
           <NoteData>[].obs;
       return _noteLists[Get.find<FolderController>().currentFolderId]!;
     } else {
+      print("顺序：${notes.map((note) => note.ord).toString()}");
       return notes;
     }
   }
@@ -61,8 +62,6 @@ class NoteListController extends GetxController {
         _noteLists[note.folderId] = <NoteData>[note].obs;
       }
     });
-    _noteLists.entries.forEach(
-        (noteListEntry) => noteListEntry.value.sort((a, b) => a.ord - b.ord));
   }
 
   Future<List<NoteData>> _fetchAllNotes() async {

@@ -132,19 +132,31 @@ Future<int> _importNotes(
   final noteListController = Get.find<NoteListController>();
   List<NoteData> notesInDatabase = noteListController.allNotes;
 
-  List<NoteDataOrOldNoteData> noteDataList;
   if (backupData.version == 1) {
-    var currentFolderId = Get.find<FolderController>().currentFolderId;
-    noteDataList = (backupData as BackupDataV1)
-        .data
-        .map<NoteData>(
-            (oldNoteData) => oldNoteData.toNewNoteData(currentFolderId))
-        .toList();
+    return await _importNotesV1(
+        backupData: backupData as BackupDataV1,
+        notesInDatabase: notesInDatabase,
+        onFall: onFall);
   } else if (backupData.version == 2) {
-    noteDataList = (backupData as BackupDataV2).data;
+    return await _importNotesV2(
+        backupData: backupData,
+        notesInDatabase: notesInDatabase,
+        onFall: onFall);
   } else {
-    return onFall("Format Error!");
+    onFall("Format Error!");
+    return 0;
   }
+}
+
+Future<int> _importNotesV1(
+    {required BackupDataV1 backupData,
+    required List<NoteData> notesInDatabase,
+    required Function(Object?) onFall}) async {
+  var currentFolderId = Get.find<FolderController>().currentFolderId;
+  List<NoteDataOrOldNoteData> noteDataList = backupData.data
+      .map<NoteData>(
+          (oldNoteData) => oldNoteData.toNewNoteData(currentFolderId))
+      .toList();
 
   int importedNotesCount = 0;
   Map<String, int> lengthsOfFolders = getLengthsOfFolders();
@@ -160,7 +172,43 @@ Future<int> _importNotes(
       onFall(err.toString() + stack.toString());
     }
   }
-  return (importedNotesCount);
+
+  return importedNotesCount;
+}
+
+Future<int> _importNotesV2(
+    {required BackupData backupData,
+    required List<NoteData> notesInDatabase,
+    required Function(Object?) onFall}) async {
+  List<NoteDataOrOldNoteData> noteDataList = backupData.data;
+
+  Map<String, int> importedNotesCountByFolder = {};
+
+  Map<String, int> lengthsOfFolders = getLengthsOfFolders();
+  for (int i = 0; i < noteDataList.length; i++) {
+    try {
+      final folderId = (noteDataList[i] as NoteData).folderId;
+
+      bool imported = await _importNote(
+          noteDataList[i] as NoteData,
+          (lengthsOfFolders[folderId] ?? 0) +
+              (importedNotesCountByFolder[folderId] ?? 0),
+          notesInDatabase);
+
+      if (imported) {
+        if (importedNotesCountByFolder[folderId] != null) {
+          importedNotesCountByFolder[folderId] = 1;
+        } else {
+          importedNotesCountByFolder[folderId] =
+              importedNotesCountByFolder[folderId]! + 1;
+        }
+      }
+    } catch (err, stack) {
+      onFall(err.toString() + stack.toString());
+    }
+  }
+
+  return importedNotesCountByFolder.values.reduce((a, b) => a + b);
 }
 
 Future<bool> _importFolder(
