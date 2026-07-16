@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -10,11 +12,10 @@ import 'package:panda_diary/states/note_list_controller.dart';
 import 'package:panda_diary/utils/file_utils.dart';
 
 import 'db/db_service.dart';
+import 'global_error_handler.dart';
 
 void main() async {
-  try {
-    WidgetsFlutterBinding.ensureInitialized();
-
+  runAppWithErrorHandling(() async {
     await GetStorage.init();
 
     await Get.putAsync<DBService>(() => DBService().init());
@@ -28,12 +29,7 @@ void main() async {
     createExportDirAndImportDir();
 
     runApp(const MyApp());
-
-  } catch (e, s) {
-    if (kDebugMode) {
-      print("Exception found: $e\n$s");
-    }
-  }
+  });
 }
 
 class MyApp extends StatelessWidget {

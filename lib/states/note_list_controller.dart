@@ -20,7 +20,6 @@ class NoteListController extends GetxController {
           <NoteData>[].obs;
       return _noteLists[Get.find<FolderController>().currentFolderId]!;
     } else {
-      print("顺序：${notes.map((note) => note.ord).toString()}");
       return notes;
     }
   }
