@@ -62,6 +62,14 @@ class NoteListController extends GetxController {
         _noteLists[note.folderId] = <NoteData>[note].obs;
       }
     });
+    _noteLists.forEach((folderId, noteList) {
+      assert(
+          noteList
+              .asMap()
+              .entries
+              .every((noteEntry) => noteEntry.value.ord == noteEntry.key),
+          "note.ord does not match the note's index!");
+    });
   }
 
   Future<List<NoteData>> _fetchAllNotes() async {
