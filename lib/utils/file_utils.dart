@@ -196,7 +196,7 @@ Future<int> _importNotesV2(
           notesInDatabase);
 
       if (imported) {
-        if (importedNotesCountByFolder[folderId] != null) {
+        if (importedNotesCountByFolder[folderId] == null) {
           importedNotesCountByFolder[folderId] = 1;
         } else {
           importedNotesCountByFolder[folderId] =
