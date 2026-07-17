@@ -270,18 +270,6 @@ Future<bool> _importNote(
   return true;
 }
 
-void createExportDirAndImportDir() async {
-  Permission.manageExternalStorage.request();
-  final Directory dir = Directory("/storage/emulated/0/$packageName");
-  if (!await dir.exists()) {
-    await dir.create(recursive: true);
-  }
-  final Directory exportDir = Directory("${dir.path}/export");
-  final Directory importDir = Directory("${dir.path}/import");
-  exportDir.create();
-  importDir.create();
-}
-
 Future<List<NoteData>> _getAllNotesData() async {
   List<NoteData> value = [];
   final dbManager = Get.find<DBService>().notesDB;
