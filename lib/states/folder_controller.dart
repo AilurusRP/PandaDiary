@@ -38,15 +38,11 @@ class FolderController extends GetxController {
 
   String get currentFolderId => _currentFolderId.value;
 
-  String get currentFolderTitle {
-    var currentFolderList =
-    folders.where((folder) => folder.id == _currentFolderId.value).toList();
-    if (currentFolderList.isNotEmpty) {
-      return currentFolderList[0].title;
-    } else {
-      return "";
-    }
-  }
+  String get currentFolderTitle =>
+      folders
+          .firstWhereOrNull((folder) => folder.id == _currentFolderId.value)
+          ?.title ??
+      "";
 
   int get lastUntitledIndex {
     if (folders.isEmpty) {
