@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:panda_diary/UI/home_page.dart';
+import 'package:panda_diary/UI/themes.dart';
 import 'package:panda_diary/constants/package_name.dart';
 import 'package:panda_diary/states/folder_controller.dart';
 import 'package:panda_diary/states/note_content_controller.dart';
@@ -32,12 +33,8 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.black,
-          dynamicSchemeVariant: DynamicSchemeVariant.fidelity,
-        ),
-      ),
+      theme: lightTheme,
+      darkTheme: darkTheme,
       title: appName,
       home: DiaryHomePage(),
     );

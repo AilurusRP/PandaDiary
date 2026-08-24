@@ -57,8 +57,8 @@ class _NoteContentEditPageState extends State<NoteContentEditPage> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          backgroundColor: Colors.black,
-          foregroundColor: Colors.white,
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          foregroundColor: Theme.of(context).colorScheme.onPrimary,
           title: SizedBox(
               height: 30,
               child: MarqueeText(
@@ -81,8 +81,11 @@ class _NoteContentEditPageState extends State<NoteContentEditPage> {
                   },
                   icon: Icon(Icons.undo,
                       color: noteContentController.undoDisabled
-                          ? Colors.grey
-                          : Colors.white));
+                          ? Theme.of(context)
+                              .colorScheme
+                              .onPrimary
+                              .withValues(alpha: .5)
+                          : Theme.of(context).colorScheme.onPrimary));
             }),
             Obx(() {
               var noteContentController = Get.find<NoteContentController>();
@@ -97,8 +100,11 @@ class _NoteContentEditPageState extends State<NoteContentEditPage> {
                   },
                   icon: Icon(Icons.redo,
                       color: noteContentController.redoDisabled
-                          ? Colors.grey
-                          : Colors.white));
+                          ? Theme.of(context)
+                              .colorScheme
+                              .onPrimary
+                              .withValues(alpha: .5)
+                          : Theme.of(context).colorScheme.onPrimary));
             })
           ],
         ),

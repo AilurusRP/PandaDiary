@@ -57,11 +57,16 @@ class FolderListItem extends StatelessWidget {
               height: 50,
               padding: const EdgeInsets.fromLTRB(20, 0, 0, 0),
               decoration: BoxDecoration(
-                  border: const Border(
-                      bottom: BorderSide(width: 0.2, color: Colors.grey)),
+                  border: Border(
+                      bottom: BorderSide(
+                          width: 0.2,
+                          color: Theme.of(context).colorScheme.outline)),
                   color: id == _folderController.currentFolderId
-                      ? Colors.white30
-                      : Colors.grey[200]),
+                      ? Theme.of(context).colorScheme.surface
+                      : Theme.of(context)
+                          .colorScheme
+                          .secondary
+                          .withValues(alpha: .2)),
               child: Row(
                 children: [
                   Expanded(
@@ -76,7 +81,11 @@ class FolderListItem extends StatelessWidget {
                     ),
                   ),
                   PopupMenuButton(
-                      icon: const Icon(Icons.more_horiz, color: Colors.black38),
+                      icon: Icon(Icons.more_horiz,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withValues(alpha: .38)),
                       itemBuilder: (context) => [
                             PopupMenuItem(
                                 child: ActionMenuItem(

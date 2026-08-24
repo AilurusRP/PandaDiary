@@ -50,8 +50,10 @@ class NoteListItem extends StatelessWidget {
         child: Container(
           height: 50,
           padding: const EdgeInsets.fromLTRB(20, 0, 0, 0),
-          decoration: const BoxDecoration(
-            border: Border(bottom: BorderSide(width: 0.2, color: Colors.grey)),
+          decoration: BoxDecoration(
+            border: Border(
+                bottom: BorderSide(
+                    width: 0.2, color: Theme.of(context).colorScheme.outline)),
           ),
           child: Row(
             children: [
@@ -67,7 +69,11 @@ class NoteListItem extends StatelessWidget {
                 ),
               ),
               PopupMenuButton(
-                  icon: const Icon(Icons.more_horiz, color: Colors.black38),
+                  icon: Icon(Icons.more_horiz,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: .38)),
                   itemBuilder: (context) => [
                         PopupMenuItem(
                             child: ActionMenuItem(

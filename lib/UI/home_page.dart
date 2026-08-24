@@ -19,18 +19,18 @@ class DiaryHomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
         title: Obx(() => Text(_folderController.currentFolderTitle)),
         actions: [TopBarActionMenuButton()],
       ),
       drawer: const SideDrawer(),
       body: Center(
           child: NoteList(
-              onPress: (NoteData note) => NoteContentEditPage.navigatorPush(context,
+              onPress: (NoteData note) => NoteContentEditPage.navigatorPush(
+                      context,
                       id: note.id,
-                      title: note.title,
-                      onContentChange: (String newContent) {
+                      title: note.title, onContentChange: (String newContent) {
                     _noteListController.editNoteContent(note.id, newContent);
                   }))),
     );

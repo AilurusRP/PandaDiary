@@ -11,12 +11,18 @@ class ActionMenuItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return TextButton(
         style: ButtonStyle(
-            overlayColor: WidgetStateProperty.all(Colors.grey[200])),
+            shape: WidgetStateProperty.all(
+              RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+            overlayColor: WidgetStateProperty.all(
+                Theme.of(context).colorScheme.secondary.withValues(alpha: .2))),
         onPressed: onPressed,
         child: Center(
             child: Text(
           text,
-          style: const TextStyle(color: Colors.black),
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
         )));
   }
 }
