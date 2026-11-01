@@ -12,13 +12,16 @@ Future<void> showEditNoteTitleDialog(context, NoteData note, {onCancel}) async {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text("Edit Title"),
+          title: Text("Edit Title",
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
           content: SingleChildScrollView(
             child: ListBody(
               children: [
                 Row(
                   children: [
-                    const Text("New Title: "),
+                    Text("New Title: ",
+                        style: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurface)),
                     SizedBox(
                         width: 120,
                         child: TextField(
@@ -36,13 +39,17 @@ Future<void> showEditNoteTitleDialog(context, NoteData note, {onCancel}) async {
                       note, noteTitleTextController.text);
                   Navigator.of(context).pop();
                 },
-                child: const Text("Ok")),
+                child: Text("Ok",
+                    style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface))),
             TextButton(
                 onPressed: () {
                   (onCancel != null) ? onCancel() : null;
                   Navigator.of(context).pop();
                 },
-                child: const Text("Cancel"))
+                child: Text("Cancel",
+                    style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface)))
           ],
         );
       });

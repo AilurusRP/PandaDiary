@@ -10,8 +10,10 @@ Future<void> showDeleteFolderDialog(context, int index, {onCancel}) async {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text("Delete Folder"),
-          content: const Text("Are you sure to delete this folder?"),
+          title: Text("Delete Folder",
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+          content: Text("Are you sure to delete this folder?",
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
           actions: [
             TextButton(
                 onPressed: () {
@@ -23,13 +25,17 @@ Future<void> showDeleteFolderDialog(context, int index, {onCancel}) async {
                     showAlertDialog(context, "Error", err.toString());
                   }
                 },
-                child: const Text("Ok")),
+                child: Text("Ok",
+                    style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface))),
             TextButton(
                 onPressed: () {
                   (onCancel != null) ? onCancel() : null;
                   Navigator.of(context).pop();
                 },
-                child: const Text("Cancel"))
+                child: Text("Cancel",
+                    style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface)))
           ],
         );
       });

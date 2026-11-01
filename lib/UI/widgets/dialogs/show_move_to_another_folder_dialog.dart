@@ -16,7 +16,9 @@ Future<void> showMoveToAnotherFolderDialog(context, NoteData note,
       builder: (context) {
         return StatefulBuilder(builder: (context, setState) {
           return AlertDialog(
-            title: const Text("Move to Another Folder"),
+            title: Text("Move to Another Folder",
+                style:
+                    TextStyle(color: Theme.of(context).colorScheme.onSurface)),
             content: SizedBox(
               width: double.maxFinite,
               child: ListView(
@@ -45,13 +47,17 @@ Future<void> showMoveToAnotherFolderDialog(context, NoteData note,
                         note, selectedFolderId);
                     Navigator.of(context).pop();
                   },
-                  child: const Text("Ok")),
+                  child: Text("Ok",
+                      style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface))),
               TextButton(
                   onPressed: () {
                     (onCancel != null) ? onCancel() : null;
                     Navigator.of(context).pop();
                   },
-                  child: const Text("Cancel"))
+                  child: Text("Cancel",
+                      style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface)))
             ],
           );
         });

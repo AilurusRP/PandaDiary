@@ -9,21 +9,27 @@ Future<void> showDeleteNoteDialog(context, String noteId, {onCancel}) async {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text("Delete Note"),
-          content: const Text("Are you sure to delete this note?"),
+          title: Text("Delete Note",
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+          content: Text("Are you sure to delete this note?",
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
           actions: [
             TextButton(
                 onPressed: () {
                   noteListController.removeAt(noteId);
                   Navigator.of(context).pop();
                 },
-                child: const Text("Ok")),
+                child: Text("Ok",
+                    style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface))),
             TextButton(
                 onPressed: () {
                   (onCancel != null) ? onCancel() : null;
                   Navigator.of(context).pop();
                 },
-                child: const Text("Cancel"))
+                child: Text("Cancel",
+                    style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface)))
           ],
         );
       });
